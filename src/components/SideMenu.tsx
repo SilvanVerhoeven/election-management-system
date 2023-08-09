@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import React, { useState } from 'react'
 import {
@@ -38,17 +38,17 @@ const items: MenuItem[] = [
     getItem('/config/elections', 'Einzelne Wahlen', 'elections'),
   ]),
   getItem('/count', 'Auszählung', 'count', <OrderedListOutlined />),
-];
+]
 
 const CustomHeader = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
       <div />
       <Menu theme="dark" defaultOpenKeys={['config']} defaultSelectedKeys={['']} mode="inline" items={items} />
     </Sider>
-  );
-};
+  )
+}
 
-export default CustomHeader;
+export default CustomHeader

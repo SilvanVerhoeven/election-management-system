@@ -1,6 +1,6 @@
-import React from 'react';
-import { Button, ConfigProvider } from 'antd';
-import theme from '@/theme/themeConfig';
+import React from 'react'
+import { Button, ConfigProvider } from 'antd'
+import theme from '@/theme/themeConfig'
 
 const HomePage = () => (
   <ConfigProvider theme={theme}>
@@ -8,6 +8,6 @@ const HomePage = () => (
       <Button type="primary">Button</Button>
     </div>
   </ConfigProvider>
-);
+)
 
-export default HomePage;
+export default HomePage

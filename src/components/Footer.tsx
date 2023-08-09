@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { Layout } from 'antd';
+import React from 'react'
+import { Layout } from 'antd'
 
-const { Footer } = Layout;
+const { Footer } = Layout
 
 const CustomFooter = ({ children }: { children: React.ReactNode }) => (
   <Footer style={{ textAlign: 'center' }}>
@@ -11,4 +11,4 @@ const CustomFooter = ({ children }: { children: React.ReactNode }) => (
   </Footer>
 )
 
-export default CustomFooter;
+export default CustomFooter

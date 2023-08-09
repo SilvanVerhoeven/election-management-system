@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
 import React from 'react'
 import { Layout, theme } from 'antd'
 
-const { Header } = Layout;
+const { Header } = Layout
 
 const CustomHeader: React.FC = () => {
   const {
@@ -15,4 +15,4 @@ const CustomHeader: React.FC = () => {
   )
 }
 
-export default CustomHeader;
+export default CustomHeader

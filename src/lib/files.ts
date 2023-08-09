@@ -1,0 +1,1 @@
+export const baseDir = () => process.env.ROOT_DIR || process.cwd()

@@ -22,6 +22,7 @@ const CountPage = () => {
   const [downloadInfo, setDownloadInfo] = useState<DownloadInfo>()
   const [isGeneratingResults, setIsGeneratingResults] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isUploadFailed, setIsUploadFailed] = useState(false)
 
   const filesChanged = (change: UploadChangeParam<UploadFile>) => {
     const { status, response } = change.file
@@ -29,8 +30,10 @@ const CountPage = () => {
     if (status === 'done') {
       messageApi.success(`Uplaod erfolgreich`)
       setDownloadInfo(response)
+      setIsUploadFailed(false)
     } else if (status === 'error') {
       messageApi.error(`Upload fehlgeschlagen`)
+      setIsUploadFailed(true)
     }
 
     if (status !== 'uploading') {
@@ -66,6 +69,7 @@ const CountPage = () => {
 
   const onFinishFailed = (errorInfo: any) => {
     messageApi.error(errorInfo)
+    setIsGeneratingResults(false)
   }
 
   return (
@@ -99,7 +103,7 @@ const CountPage = () => {
             type="primary"
             size='large'
             htmlType="submit"
-            disabled={!file || isUploading}
+            disabled={!file || isUploading || isUploadFailed}
             loading={isGeneratingResults && { delay: 200 }}
           >
             Ergebnis-Protokoll herunterladen

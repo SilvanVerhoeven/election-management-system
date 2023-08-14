@@ -21,6 +21,7 @@ const CountPage = () => {
   const [file, setFile] = useState<UploadFile>()
   const [downloadInfo, setDownloadInfo] = useState<DownloadInfo>()
   const [isGeneratingResults, setIsGeneratingResults] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   const filesChanged = (change: UploadChangeParam<UploadFile>) => {
     const { status, response } = change.file
@@ -35,6 +36,8 @@ const CountPage = () => {
     if (status !== 'uploading') {
       setFile(change.fileList[0])
     }
+
+    setTimeout(() => setIsUploading(status === 'uploading'), 50)
   }
 
   const onFinish = async () => {
@@ -96,7 +99,7 @@ const CountPage = () => {
             type="primary"
             size='large'
             htmlType="submit"
-            disabled={!file}
+            disabled={!file || isUploading}
             loading={isGeneratingResults && { delay: 200 }}
           >
             Ergebnis-Protokoll herunterladen

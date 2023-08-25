@@ -1,10 +1,11 @@
 import React from 'react'
 import { Inter } from 'next/font/google'
 import StyledComponentsRegistry from '../lib/AntdRegistry'
-import { Layout } from 'antd'
+import { ConfigProvider, Layout } from 'antd'
 import SideMenu from '@/components/SideMenu'
 import Footer from '@/components/Footer'
 import Content from '@/components/Content'
+import theme from '@/theme/themeConfig'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,7 +22,10 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
         <Layout>
           {/* <Header /> */}
           <Content>
-            <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+            <StyledComponentsRegistry>
+              <ConfigProvider theme={theme}>
+                {children}
+              </ConfigProvider></StyledComponentsRegistry>
           </Content>
           <Footer>{metadata.title}</Footer>
         </Layout>

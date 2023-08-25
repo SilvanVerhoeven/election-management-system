@@ -31,6 +31,7 @@ const getItem = (
 
 const items: MenuItem[] = [
   getItem(null, 'Konfiguration', 'config', <SettingOutlined />, [
+    getItem('/config/templates', 'Vorlagen', 'templates'),
     getItem('/config/basics', 'Eckdaten', 'basics'),
     getItem('/config/faculties', 'Fakultäten', 'faculties'),
     getItem('/config/statusgroups', 'Statusgruppen', 'statusGroups'),

@@ -3,7 +3,7 @@ import { join } from 'path'
 import { mkdir, stat } from "fs/promises"
 import * as dateFns from 'date-fns'
 import {writeFile} from 'fs/promises'
-import { baseDir } from '@/lib/files'
+import { filesDir } from '@/lib/files'
 
 export interface DownloadInfo {
   fileDir: string,
@@ -14,12 +14,8 @@ export async function POST(req: NextRequest) {
   const data = await req.formData()
   const file = data.get("file")?.valueOf() as File
 
-  const uploadDir = `/uploads/${dateFns.format(Date.now(), "yyyy-MM-dd")}`
-
-  const fullUploadDir = join(
-    baseDir(),
-    uploadDir
-  )
+  const dateDir = dateFns.format(Date.now(), "yyyy-MM-dd")
+  const fullUploadDir = join(filesDir(), dateDir)
   
   try {
     await stat(fullUploadDir)
@@ -38,5 +34,5 @@ export async function POST(req: NextRequest) {
 
   await writeFile(filePath, Buffer.from(await file.arrayBuffer()))
  
-  return NextResponse.json({ fileDir: uploadDir, filename })
+  return NextResponse.json({ fileDir: dateDir, filename })
 }

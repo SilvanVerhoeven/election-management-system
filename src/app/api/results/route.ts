@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
-import { DonwloadRequestData } from '@/app/count/page'
+import { DonwloadRequestData } from '@/app/results/page'
 import { readFile } from 'fs/promises'
-import { generateResultHtml, parseResultsFile } from '@/lib/generateResults'
+import { generateResultWord, parseResultsFile } from '@/lib/generateResults'
 import path from 'path'
-import { baseDir } from '@/lib/files'
+import { filesDir } from '@/lib/files'
+import mime from 'mime'
 
 /**
  * SECURITY RISK
@@ -16,13 +17,18 @@ import { baseDir } from '@/lib/files'
 export async function POST(req: NextRequest) {
   const {
     filename,
-    fileDir
+    fileDir: dateDir
   } = await req.json() as DonwloadRequestData
 
-  const buffer = await readFile(path.join(baseDir(), fileDir, filename))
+  const buffer = await readFile(path.join(filesDir(), dateDir, filename))
   const electionData = await parseResultsFile(buffer)
+  const wordBuffer = await generateResultWord(electionData)
 
-  return new Response(
-    generateResultHtml(electionData)
-  )
+  return new Response(wordBuffer, {
+    headers: {
+      "content-type": `${(mime.getType("docx") || '')}; charset=utf-8`,
+      "content-disposition": `attachment; filename="ergebnis-${electionData.committee}_${electionData.statusGroup}"`,
+      "content-length": `${wordBuffer.byteLength}`
+    },
+  })
 }

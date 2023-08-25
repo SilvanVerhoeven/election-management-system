@@ -30,15 +30,11 @@ const getItem = (
 }
 
 const items: MenuItem[] = [
+  getItem('/basis', 'Basisdaten', 'basis', <OrderedListOutlined />),
+  getItem('/results', 'Ergebnis', 'results', <OrderedListOutlined />),
   getItem(null, 'Konfiguration', 'config', <SettingOutlined />, [
     getItem('/config/templates', 'Vorlagen', 'templates'),
-    getItem('/config/basics', 'Eckdaten', 'basics'),
-    getItem('/config/faculties', 'Fakultäten', 'faculties'),
-    getItem('/config/statusgroups', 'Statusgruppen', 'statusGroups'),
-    getItem('/config/constituencies', 'Wahlkreise', 'constituencies'),
-    getItem('/config/elections', 'Einzelne Wahlen', 'elections'),
   ]),
-  getItem('/count', 'Auszählung', 'count', <OrderedListOutlined />),
 ]
 
 const CustomHeader = () => {

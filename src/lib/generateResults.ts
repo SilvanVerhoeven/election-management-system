@@ -1,5 +1,10 @@
 import readExcelFile from 'read-excel-file/node'
 import { Row } from 'read-excel-file'
+import PizZip from 'pizzip'
+import Docxtemplater from 'docxtemplater'
+import fs from 'node:fs/promises'
+import path from 'path'
+import { baseDir } from './files'
 
 const candidateNameRegEx = new RegExp("(.*), (.*) \\((.*)\\)")
 const courseRegEx = new RegExp("(\\d*)\\.")
@@ -145,4 +150,32 @@ export const generateResultHtml = (electionData: ElectionData) => {
     
     </html>
   `
+}
+
+export const generateResultWord = async (electionData: ElectionData) => {
+  // Load the docx file as binary content
+  const content = await fs.readFile(
+      path.resolve(baseDir(), "templates/input.docx"),
+      "binary"
+  )
+
+  const zip = new PizZip(content)
+
+  const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+  })
+
+  doc.render(electionData)
+
+  const buf = doc.getZip().generate({
+      type: "nodebuffer",
+      // compression: DEFLATE adds a compression step.
+      // For a 50MB output document, expect 500ms additional CPU time
+      compression: "DEFLATE",
+  })
+
+  // buf is a nodejs Buffer, you can either write it to a
+  // file or res.send it with express for example.
+  return buf
 }

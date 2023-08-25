@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react'
 import { FileAddOutlined, FileSyncOutlined } from '@ant-design/icons'
-import { ConfigProvider, Upload, Typography, Button, Form, UploadFile, message } from 'antd'
-import theme from '@/theme/themeConfig'
+import { Upload, Typography, Button, Form, UploadFile, message } from 'antd'
 import { UploadChangeParam } from 'antd/es/upload'
 import { DownloadInfo } from '../api/files/upload/route'
 
@@ -52,19 +51,41 @@ const CountPage = () => {
 
     setIsGeneratingResults(true)
 
-    const resultHtml = await (await fetch('../api/results', {
+    const response = await fetch('../api/results', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-    })).text()
+    })
+
+    const downloadUrl = window.URL.createObjectURL(await response.blob())
 
     setIsGeneratingResults(false)
 
-    const printContainer = document.querySelector("#print-container") as HTMLIFrameElement
-    printContainer.onload = () => setTimeout(() => printContainer.contentWindow?.print(), 400)
-    printContainer.srcdoc = resultHtml
+    const downloadResponse = () => {
+      let filename = ""
+      let filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+      const matches = filenameRegex.exec(response.headers.get('content-disposition') || "")
+      if (matches != null && matches[1]) {
+        filename = matches[1].replace(/['"]/g, '')
+      }
+
+      const hiddenDownloadLink = document.createElement("a")
+      hiddenDownloadLink.setAttribute("style", "display: none")
+      hiddenDownloadLink.href = downloadUrl
+      hiddenDownloadLink.download = filename
+      document.body.appendChild(hiddenDownloadLink)
+
+      hiddenDownloadLink.click()
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(downloadUrl)
+        hiddenDownloadLink.remove()
+      }, 100)
+    }
+
+    downloadResponse()
   }
 
   const onFinishFailed = (errorInfo: any) => {
@@ -73,7 +94,7 @@ const CountPage = () => {
   }
 
   return (
-    <ConfigProvider theme={theme}>
+    <>
       {contextHolder}
       <Title style={{ marginTop: 0 }}>Ergebnis-Protokoll erstellen</Title>
       <Form
@@ -111,7 +132,7 @@ const CountPage = () => {
         </Form.Item>
       </Form>
       <iframe id="print-container" style={{ display: "none" }}></iframe>
-    </ConfigProvider>
+    </>
   )
 }
 

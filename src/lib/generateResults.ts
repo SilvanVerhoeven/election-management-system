@@ -1,10 +1,10 @@
-import readExcelFile from 'read-excel-file/node'
-import { Row } from 'read-excel-file'
+import Excel from 'exceljs'
+import { Row } from 'exceljs'
 import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater'
 import fs from 'node:fs/promises'
 import path from 'path'
-import { baseDir } from './files'
+import { templatesDir } from './files'
 
 const candidateNameRegEx = new RegExp("(.*), (.*) \\((.*)\\)")
 const courseRegEx = new RegExp("(\\d*)\\.")
@@ -41,31 +41,31 @@ type ElectionData = {
  * @returns Remaining rows. First contains list name.
  */
 const skipToNextList = (rows: Row[]) => {
-  while (rows.length > 0 && rows[0][2].valueOf() != "Listenname") rows = rows.slice(1)
+  while (rows.length > 0 && rows[0].getCell(3).text != "Listenname") rows = rows.slice(1)
   return rows.length == 0 ? [] : rows.slice(1)
 }
 
 const parseCandidateList = (rows: Row[]): { list: CandidateList, unconsumedRows: Row[] } | null => {
   rows = skipToNextList(rows)
-  if (rows.length == 0 || rows[0][2] == null) return null
+  if (rows.length == 0 || rows[0].getCell(3).value == null) return null
   
   const list: CandidateList = {
-    name: rows[0][2].toString(),
-    order: rows[0][0] == null ? "alphabetical" : "numeric",
+    name: rows[0].getCell(3).text,
+    order: rows[0].getCell(1).value == null ? "alphabetical" : "numeric",
     candidates: []
   }
 
   rows = rows.slice(1)
 
-  while (rows.length > 0 && rows[0][2].valueOf() != "Listenname") {
-    const nameMatch = (rows[0][2].valueOf() as string).match(candidateNameRegEx)
-    const positionMatch = ((list.order == "alphabetical" ? rows[0][1] : rows[0][0]).valueOf() as string).match(courseRegEx)
-    if (!nameMatch || !positionMatch) throw  new Error(`Kandidat nicht korrekt formatiert in Zeile: ${rows}`)
+  while (rows.length > 0 && rows[0].getCell(3).text != "Listenname") {
+    const nameMatch = (rows[0].getCell(3).text).match(candidateNameRegEx)
+    const positionMatch = ((list.order == "alphabetical" ? rows[0].getCell(2) : rows[0].getCell(1)).text).match(courseRegEx)
+    if (!nameMatch || !positionMatch) throw  new Error(`Kandidat nicht korrekt formatiert in Zeile: ${rows[0].values}`)
     const candidate: Candidate = {
       firstname: nameMatch[2].toString(),
       lastname: nameMatch[1].toString(),
       course: nameMatch[3].toString(),
-      votes: rows[0][3].valueOf() as number,
+      votes: rows[0].getCell(4).value as number,
       position: parseInt(positionMatch[1].toString()),
     }
     list.candidates.push(candidate)
@@ -90,15 +90,17 @@ const parseCandidateLists = (rows: Row[]) => {
  * Takes a result file as a buffer and returns the contained election data.
  */
 export const parseResultsFile = async (buffer: Buffer): Promise<ElectionData> => {
-  const rows = await readExcelFile(buffer)
+  const workbook = new Excel.Workbook()
+  await workbook.xlsx.load(buffer)
+  const worksheet = workbook.worksheets[0]
 
-  const committee = rows[0][3].valueOf() as string
-  const district = rows[1][3].valueOf() as string
-  const statusGroup = rows[3][3].valueOf() as string
-  const boxOffice = rows[2][3].valueOf() as string
-  const numberOfSeats = rows[4][3].valueOf() as number
+  const committee = worksheet.getCell('D1').text
+  const district = worksheet.getCell('D2').text
+  const statusGroup = worksheet.getCell('D4').text
+  const boxOffice = worksheet.getCell('D3').text
+  const numberOfSeats = worksheet.getCell('D5').value as number
 
-  const lists = parseCandidateLists(rows)
+  const lists = parseCandidateLists(worksheet.getRows(1, worksheet.rowCount) || [])
 
   return {
     committee,

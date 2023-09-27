@@ -5,6 +5,7 @@ import { FileAddOutlined, FileSyncOutlined } from '@ant-design/icons'
 import { Upload, Typography, Button, Form, UploadFile, message } from 'antd'
 import { UploadChangeParam } from 'antd/es/upload'
 import { DownloadInfo } from '../api/files/upload/route'
+import { saveBlob } from '@/lib/files'
 
 const { Dragger } = Upload
 const { Title } = Typography
@@ -59,33 +60,9 @@ const CountPage = () => {
       body: JSON.stringify(payload),
     })
 
-    const downloadUrl = window.URL.createObjectURL(await response.blob())
+    await saveBlob(await response.blob(), response.headers.get('content-disposition'))
 
     setIsGeneratingResults(false)
-
-    const downloadResponse = () => {
-      let filename = ""
-      let filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
-      const matches = filenameRegex.exec(response.headers.get('content-disposition') || "")
-      if (matches != null && matches[1]) {
-        filename = matches[1].replace(/['"]/g, '')
-      }
-
-      const hiddenDownloadLink = document.createElement("a")
-      hiddenDownloadLink.setAttribute("style", "display: none")
-      hiddenDownloadLink.href = downloadUrl
-      hiddenDownloadLink.download = filename
-      document.body.appendChild(hiddenDownloadLink)
-
-      hiddenDownloadLink.click()
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(downloadUrl)
-        hiddenDownloadLink.remove()
-      }, 100)
-    }
-
-    downloadResponse()
   }
 
   const onFinishFailed = (errorInfo: any) => {

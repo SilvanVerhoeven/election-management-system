@@ -53,7 +53,7 @@ const TemplateConfigPage = () => {
     }).then(
       async (res) => options.onSuccess && options.onSuccess(await res.json())
     ).catch((err: Error) => {
-      console.log(err)
+      console.error(err)
     })
   }
 

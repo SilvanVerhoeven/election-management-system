@@ -5,6 +5,7 @@ import Docxtemplater from 'docxtemplater'
 import fs from 'node:fs/promises'
 import path from 'path'
 import { templatesDir } from './files'
+import { templateTypes } from './types'
 
 const candidateNameRegEx = new RegExp("(.*), (.*) \\((.*)\\)")
 const courseRegEx = new RegExp("(\\d*)\\.")
@@ -48,7 +49,7 @@ const skipToNextList = (rows: Row[]) => {
 const parseCandidateList = (rows: Row[]): { list: CandidateList, unconsumedRows: Row[] } | null => {
   rows = skipToNextList(rows)
   if (rows.length == 0 || rows[0].getCell(3).value == null) return null
-  
+
   const list: CandidateList = {
     name: rows[0].getCell(3).text,
     order: rows[0].getCell(1).value == null ? "alphabetical" : "numeric",
@@ -60,7 +61,7 @@ const parseCandidateList = (rows: Row[]): { list: CandidateList, unconsumedRows:
   while (rows.length > 0 && rows[0].getCell(3).text != "Listenname") {
     const nameMatch = (rows[0].getCell(3).text).match(candidateNameRegEx)
     const positionMatch = ((list.order == "alphabetical" ? rows[0].getCell(2) : rows[0].getCell(1)).text).match(courseRegEx)
-    if (!nameMatch || !positionMatch) throw  new Error(`Kandidat nicht korrekt formatiert in Zeile: ${rows[0].values}`)
+    if (!nameMatch || !positionMatch) throw new Error(`Kandidat nicht korrekt formatiert in Zeile: ${rows[0].values}`)
     const candidate: Candidate = {
       firstname: nameMatch[2].toString(),
       lastname: nameMatch[1].toString(),
@@ -117,14 +118,14 @@ export const parseResultsFile = async (buffer: Buffer): Promise<ElectionData> =>
  */
 export const generateResultHtml = (electionData: ElectionData) => {
   const getSubsetHtml = (list: CandidateList, start: number, numberOfSeats?: number) => {
-    const subsetCandidates = list.candidates.sort((a, b) => b.votes - a.votes).slice(start, numberOfSeats ? start+numberOfSeats : undefined)
+    const subsetCandidates = list.candidates.sort((a, b) => b.votes - a.votes).slice(start, numberOfSeats ? start + numberOfSeats : undefined)
     return `<table>
         ${subsetCandidates.map((candidate: Candidate) => `
           <tr>
             <td>${candidate.votes}<td>
             <td>${candidate.lastname}, ${candidate.firstname} (${candidate.course})<td>
           </tr>
-        `).reduce((previous, current) => previous+current)}
+        `).reduce((previous, current) => previous + current)}
       </table>`
   }
 
@@ -136,9 +137,9 @@ export const generateResultHtml = (electionData: ElectionData) => {
     <h6>Stellvertretungen</h6>
     ${getSubsetHtml(list, electionData.numberOfSeats, electionData.numberOfSeats)}
     <h6>Reserve</h6>
-    ${getSubsetHtml(list, electionData.numberOfSeats*2+1)}
+    ${getSubsetHtml(list, electionData.numberOfSeats * 2 + 1)}
   `
-  
+
   return `
     <!doctype html>
     <html lang="de">
@@ -147,7 +148,7 @@ export const generateResultHtml = (electionData: ElectionData) => {
       <h1>Wahlergebnis</h1>
       <h2>${electionData.committee} der ${electionData.district}</h2>
       <h3>${electionData.statusGroup}</h3>
-      ${electionData.lists.map(getListHtml).reduce((previous, current) => previous+current)}
+      ${electionData.lists.map(getListHtml).reduce((previous, current) => previous + current)}
     </body>
     
     </html>
@@ -157,24 +158,24 @@ export const generateResultHtml = (electionData: ElectionData) => {
 export const generateResultWord = async (electionData: ElectionData) => {
   // Load the docx file as binary content
   const content = await fs.readFile(
-      path.resolve(baseDir(), "templates/input.docx"),
-      "binary"
+    path.resolve(templatesDir(), path.join(templateTypes.Results, `${templateTypes.Results}.docx`)),
+    "binary"
   )
 
   const zip = new PizZip(content)
 
   const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
+    paragraphLoop: true,
+    linebreaks: true,
   })
 
   doc.render(electionData)
 
   const buf = doc.getZip().generate({
-      type: "nodebuffer",
-      // compression: DEFLATE adds a compression step.
-      // For a 50MB output document, expect 500ms additional CPU time
-      compression: "DEFLATE",
+    type: "nodebuffer",
+    // compression: DEFLATE adds a compression step.
+    // For a 50MB output document, expect 500ms additional CPU time
+    compression: "DEFLATE",
   })
 
   // buf is a nodejs Buffer, you can either write it to a

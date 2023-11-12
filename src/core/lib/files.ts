@@ -1,5 +1,5 @@
 import path from "path"
-import { TemplateTypes } from "./types"
+import { TemplateTypes } from "../../types"
 
 /**
  * Returns root directory of the server.

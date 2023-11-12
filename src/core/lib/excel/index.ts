@@ -27,6 +27,25 @@ const drawVerticalLine = (worksheet: ExcelJS.Worksheet, column: number) => {
 }
 
 /**
+ * Fills a columns with IDs, numbers from 1 to a given maximum.
+ *
+ * @param worksheet Worksheet to work in
+ * @param maximum Maximum number of rows to fill
+ * @param column Index of column to fill with IDs
+ * @param offset Index of first row to fill
+ */
+const generateIds = (
+  worksheet: ExcelJS.Worksheet,
+  maximum: number = 100,
+  column: number = 1,
+  offset: number = 2
+) => {
+  worksheet
+    .getRows(offset, maximum)
+    ?.forEach((row, index) => (row.getCell(column).value = index + 1))
+}
+
+/**
  * Apply the default style to all sheets of a workbook.
  * If possible, customly set styles will be kept.
  *
@@ -42,4 +61,4 @@ const applyDefaultStyle = (workbook: ExcelJS.Workbook) => {
   )
 }
 
-export { styledRowsMargin, defaults, drawVerticalLine, applyDefaultStyle }
+export { styledRowsMargin, defaults, drawVerticalLine, applyDefaultStyle, generateIds }

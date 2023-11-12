@@ -63,3 +63,148 @@ model Token {
 // enum TokenType {
 //   RESET_PASSWORD
 // }
+
+// -----------------------------------------------------
+
+model Person {
+  id                     Int                     @id @default(autoincrement())
+  type                   String // ENUM: student/employee
+  firstName              String
+  lastName               String
+  email                  String
+  status                 String // electable, rejected, String
+  comment                String
+  electabilityVerifiedOn DateTime
+  isElectionHelper       Boolean
+  matriculationNumber    String? // only students
+  subject                Subject?                @relation(fields: [subjectId], references: [id]) // only students 
+  explicitelyVoteAt      Unit?                   @relation(name: "explicitelyVoteAt", fields: [explicitelyVoteAtId], references: [id]) // only students 
+  worksAt                Unit?                   @relation(name: "worksAt", fields: [worksAtId], references: [id]) // only emplyees 
+  statusGroups           StatusGroup[]
+  votingResults          VotingResult[]
+  candidateListPositions CandidateListPosition[]
+  subjectId              Int?
+  explicitelyVoteAtId    Int?
+  worksAtId              Int?
+}
+
+model Subject {
+  id          Int      @id @default(autoincrement())
+  name        String
+  shortName   String?
+  belongsTo   Unit     @relation(fields: [belongsToId], references: [id])
+  enrollees   Person[]
+  belongsToId Int
+}
+
+model Campus {
+  id              Int              @id @default(autoincrement())
+  name            String
+  shortName       String?
+  associatedUnits Unit[]
+  pollingStations PollingStation[]
+}
+
+model Constituency {
+  id                 Int            @id @default(autoincrement())
+  name               String
+  shortName          String?
+  description        String?
+  presenceVotingAt   PollingStation @relation(fields: [presenceVotingAtId], references: [id])
+  presenceVotingAtId Int
+  assignedUnits      Unit[]
+  elections          Election[]
+}
+
+model Unit {
+  id               Int          @id @default(autoincrement())
+  type             String //ENUM: faculty/department
+  name             String
+  shortName        String?
+  description      String?
+  associatedWith   Campus       @relation(fields: [associatedWithId], references: [id])
+  assignedTo       Constituency @relation(fields: [assignedToId], references: [id])
+  subjects         Subject[]
+  students         Person[]     @relation(name: "explicitelyVoteAt")
+  employees        Person[]     @relation(name: "worksAt")
+  associatedWithId Int
+  assignedToId     Int
+}
+
+model PollingStation {
+  id                 Int            @id @default(autoincrement())
+  name               String
+  shortName          String?
+  locatedAt          Campus         @relation(fields: [locatedAtId], references: [id])
+  mainConstituencies Constituency[]
+  locatedAtId        Int
+}
+
+model StatusGroup {
+  id          Int        @id @default(autoincrement())
+  name        String
+  shortName   String?
+  priority    Int
+  members     Person[]
+  eligibleFor Election[]
+}
+
+model VotingResult {
+  id            Int      @id @default(autoincrement())
+  numberOfVotes Int
+  candidate     Person   @relation(fields: [candidateId], references: [id])
+  election      Election @relation(fields: [electionId], references: [id])
+  electionId    Int
+  candidateId   Int
+}
+
+model CandidateList {
+  id                 Int                     @id @default(autoincrement())
+  name               String
+  shortName          String?
+  order              String // ENUM: alphabetical/numeric
+  submittedOn        DateTime
+  candidatesFor      Election                @relation(fields: [candidatesForId], references: [id])
+  candidatesForId    Int
+  candidatePositions CandidateListPosition[]
+}
+
+model CandidateListPosition {
+  candidate   Person        @relation(fields: [candidateId], references: [id])
+  candidateId Int
+  list        CandidateList @relation(fields: [listId], references: [id])
+  listId      Int
+  position    Int? // 0-indexed Position of candidate on candidate list, may be undefined for alphabetical lists
+
+  @@id([candidateId, listId])
+}
+
+model Election {
+  id                     Int             @id @default(autoincrement())
+  type                   String // ENUM: majority/ballot
+  numberOfSeats          Int
+  concerns               Committee       @relation(fields: [committeeId], references: [id])
+  eligibleStatusGroups   StatusGroup[]
+  eligibleConstituencies Constituency[]
+  votingResults          VotingResult[]
+  candidateLists         CandidateList[]
+  runsAt                 Elections?      @relation(fields: [runsAtId], references: [id])
+  committeeId            Int
+  runsAtId               Int?
+}
+
+model Committee {
+  id            Int        @id @default(autoincrement())
+  name          String
+  shortName     String?
+  numberOfSeats Int
+  elections     Election[]
+}
+
+model Elections {
+  id        Int        @id @default(autoincrement())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  elections Election[]
+}

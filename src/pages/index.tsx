@@ -178,7 +178,7 @@ const HomePage: BlitzPage = () => {
 
   const downloadExcel = async () => {
     setIsDownloadingExcel(true)
-    const response = await fetch("../api/basis/download")
+    const response = await fetch("/api/basis/download")
     await saveBlob(await response.blob(), response.headers.get("content-disposition"))
     setIsDownloadingExcel(false)
   }

@@ -1,5 +1,5 @@
 import path from "path"
-import { TemplateTypes } from "../../types"
+import { Upload } from "../../types"
 
 /**
  * Returns root directory of the server.
@@ -12,15 +12,16 @@ export const baseDir = () => process.env.ROOT_DIR || process.cwd()
 export const filesDir = () => path.join(baseDir(), "uploads")
 
 /**
- * Returns base directory of templates.
+ * Returns download URL for given upload object.
  */
-export const templatesDir = () => path.join(baseDir(), "templates")
+export const downloadUrl = (upload: Upload) => path.join(`../api/files/${upload.id}`)
 
 /**
- * Returns download URL for given template ID.
+ * Returns the path of the actual stored file for a given upload.
  */
-export const downloadUrl = (templateId: TemplateTypes) =>
-  path.join(`../api/templates/${templateId}/download/`)
+export const getFilePath = (upload: Upload) => {
+  return path.join(filesDir(), upload.id.toString())
+}
 
 /**
  * Saves the given blob locally.

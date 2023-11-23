@@ -61,4 +61,18 @@ const applyDefaultStyle = (workbook: ExcelJS.Workbook) => {
   )
 }
 
-export { styledRowsMargin, defaults, drawVerticalLine, applyDefaultStyle, generateIds }
+/**
+ * Parses comma-separated list of items into an array of strings.
+ * Commonly found in an Excel file.
+ *
+ * Whitespace around items/between commas/items is removed.
+ *
+ * @param list Comma-separated list of values
+ * @returns Array of items without surrounding whitespace
+ */
+const parseList = (list: string): string[] => {
+  const items = list.split(",").map((item) => item.trim())
+  return items
+}
+
+export { styledRowsMargin, defaults, drawVerticalLine, applyDefaultStyle, generateIds, parseList }

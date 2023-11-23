@@ -12,14 +12,16 @@ import {
   Subject as DbSubject,
   Unit as DbUnit,
   VotingResult as DbVotingResult,
+  Upload as DbUpload,
 } from "db"
 
-export const templateTypes = {
+export const templateType = {
+  Ballot: "ballot",
   Results: "results",
   Config: "config",
 } as const
 
-export type TemplateTypes = (typeof templateTypes)[keyof typeof templateTypes]
+export type TemplateType = (typeof templateType)[keyof typeof templateType]
 
 export enum PersonType {
   STUDENT = "student",
@@ -39,6 +41,23 @@ export enum ElectionType {
 export enum CandidateListOrderType {
   ALPHABETICALLY = "alphabetical",
   NUMERIC = "numeric",
+}
+
+export enum UploadType {
+  TEMPLATE = "template",
+  DATA = "data",
+}
+
+export type Upload = DbUpload
+
+export type Template = DbUpload & {
+  type: UploadType.TEMPLATE
+  key: string
+}
+
+export type Data = DbUpload & {
+  type: UploadType.DATA
+  key?: string
 }
 
 export type Person = DbPerson & {

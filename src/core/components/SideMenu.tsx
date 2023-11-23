@@ -1,5 +1,10 @@
 import React, { useState } from "react"
-import { SettingOutlined, OrderedListOutlined, ContainerOutlined } from "@ant-design/icons"
+import {
+  SettingOutlined,
+  OrderedListOutlined,
+  ContainerOutlined,
+  FileExcelOutlined,
+} from "@ant-design/icons"
 import type { MenuProps } from "antd"
 import { Layout, Menu } from "antd"
 import Link from "next/link"
@@ -27,6 +32,7 @@ const getItem = (
 
 const items: MenuItem[] = [
   getItem(Routes.HomePage().href, "Basisdaten", "basis", <ContainerOutlined />),
+  getItem(Routes.BallotPage().href, "Stimmzettel", "ballots", <FileExcelOutlined />),
   getItem(Routes.CountPage().href, "Ergebnis", "results", <OrderedListOutlined />),
   getItem(null, "Konfiguration", "config", <SettingOutlined />, [
     getItem(Routes.TemplateConfigPage().href, "Vorlagen", "templates"),

@@ -1,3 +1,7 @@
+# uploads
+uploads/
+templates/
+
 # dependencies
 node_modules
 .yarn/*

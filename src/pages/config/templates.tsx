@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react"
 import { DownloadOutlined, UploadOutlined } from "@ant-design/icons"
-import { Upload, Typography, Button, Form, UploadFile, message } from "antd"
+import { Upload as AntdUpload, Typography, Button, Form, UploadFile, message } from "antd"
 import { UploadRequestOption } from "rc-upload/lib/interface"
-import { DownloadInfo } from "../api/files/upload/route"
-import { templateTypes, TemplateTypes } from "src/types"
+import { DownloadInfo } from "../api/files/upload"
+import { templateType, TemplateType, Upload, UploadType } from "src/types"
 import { UploadChangeParam } from "antd/es/upload"
 import { downloadUrl } from "src/core/lib/files"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
+import { getAntiCSRFToken } from "@blitzjs/auth"
+import { useQuery } from "@blitzjs/rpc"
+import getTemplates from "src/core/queries/getTemplates"
 
 const { Title } = Typography
 
@@ -19,47 +22,61 @@ export interface DonwloadRequestData extends DownloadInfo {
 const TemplateConfigPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
 
-  const [uploadedTemplates, setUploadedTemplates] =
-    useState<{ [key in TemplateTypes]: { filename: string } }>()
+  const [uploadedTemplates, { setQueryData }] = useQuery(getTemplates, null)
   const [isDownloadingTemplates, setIsDownloadingTemplates] = useState(false)
 
-  useEffect(() => {
-    const fetchData = async () =>
-      setUploadedTemplates(await (await fetch("../../api/templates")).json())
-    void fetchData()
-  }, [])
-
-  const filesChanged = async (templateId: TemplateTypes, change: UploadChangeParam<UploadFile>) => {
-    const { status } = change.file
+  const filesChanged = async (change: UploadChangeParam<UploadFile>) => {
+    const { response: template, status, error } = change.file
 
     if (status === "done") {
+      change.file.url = downloadUrl(template!)
+      uploadedTemplates.find((t) => t.id == template?.key)!.upload = template
+      await setQueryData([...uploadedTemplates])
       await messageApi.success(`Uplaod erfolgreich`)
-      change.file.url = downloadUrl(templateId)
     } else if (status === "error") {
+      console.error(error)
       await messageApi.error(`Upload fehlgeschlagen`)
     }
   }
 
   const labels = {
-    [templateTypes.Results]: "Wahlergebnis-Protokoll",
-    [templateTypes.Config]: "Konfiguration",
+    [templateType.Ballot]: "Stimmzettel",
+    [templateType.Results]: "Wahlergebnis-Protokoll",
+    [templateType.Config]: "Konfiguration",
   }
 
-  const uploadFile = (templateId: TemplateTypes, options: UploadRequestOption<JSON>) => {
-    const data = new FormData()
-    data.append("file", options.file)
-    data.append("templateId", templateId)
-    fetch(options.action, {
-      method: "POST",
-      body: data,
-    })
-      .then(async (res) => options.onSuccess && options.onSuccess(await res.json()))
-      .catch((err: Error) => {
-        console.error(err)
+  const uploadFile = async (templateId: TemplateType, options: UploadRequestOption<JSON>) => {
+    const payload = new FormData()
+    const antiCSRFToken = getAntiCSRFToken()
+    payload.append("method", "db")
+    payload.append("type", UploadType.TEMPLATE)
+    payload.append("key", templateId)
+    payload.append("file", options.file)
+    try {
+      const response = await fetch(options.action, {
+        method: "POST",
+        headers: {
+          "anti-csrf": antiCSRFToken,
+        },
+        body: payload,
       })
+      if (response.status !== 200)
+        throw new Error(
+          `Vorlage konnte nicht hochgeladen werden. Bitte wenden Sie sich an die Systemadministration. Fehler: ${
+            response.status
+          } - ${await response.text()}`
+        )
+      if (options.onSuccess) options.onSuccess(await response.json())
+    } catch (error) {
+      if (options.onError) {
+        options.onError(error)
+      } else {
+        console.error(error)
+      }
+    }
   }
 
-  const deleteFile = async (templateId: TemplateTypes, file: UploadFile) => {
+  const deleteFile = async (templateId: TemplateType, file: UploadFile) => {
     return (await fetch(`../api/templates/${templateId}/delete`)).ok
   }
 
@@ -83,37 +100,35 @@ const TemplateConfigPage: BlitzPage = () => {
           </Button>
         </Form.Item>
         {uploadedTemplates &&
-          Object.values(templateTypes).map((templateId) => (
-            <Form.Item label={labels[templateId]} name={templateId} key={templateId}>
-              <Upload
+          uploadedTemplates.map((template) => (
+            <Form.Item label={labels[template.id]} name={template.id} key={template.id}>
+              <AntdUpload
                 multiple={false}
                 maxCount={1}
-                action={"../api/templates/upload"}
-                customRequest={(options: UploadRequestOption) => uploadFile(templateId, options)}
-                onChange={(change: UploadChangeParam<UploadFile>) =>
-                  filesChanged(templateId, change)
-                }
+                action={"../api/files/upload"}
+                customRequest={(options: UploadRequestOption) => uploadFile(template.id, options)}
+                onChange={filesChanged}
                 accept=".docx"
                 defaultFileList={
-                  uploadedTemplates[templateId]
+                  template.upload
                     ? [
                         {
-                          uid: templateId,
-                          name: uploadedTemplates[templateId].filename,
+                          uid: template.id,
+                          name: template.upload?.filename || "",
                           status: "done",
-                          url: downloadUrl(templateId),
+                          url: downloadUrl(template.upload),
                         },
                       ]
                     : []
                 }
-                onRemove={(file: UploadFile) => deleteFile(templateId, file)}
+                onRemove={(file: UploadFile) => deleteFile(template.id, file)}
                 showUploadList={{
                   showDownloadIcon: true,
                   downloadIcon: "Herunterladen",
                 }}
               >
                 <Button icon={<UploadOutlined />}>Upload</Button>
-              </Upload>
+              </AntdUpload>
             </Form.Item>
           ))}
       </Form>

@@ -208,3 +208,11 @@ model Elections {
   endDate   DateTime
   elections Election[]
 }
+
+model Upload {
+  id         Int      @id @default(autoincrement())
+  filename   String
+  uploadedAt DateTime @default(now())
+  type       String // ENUM: template, data
+  key        String?
+}

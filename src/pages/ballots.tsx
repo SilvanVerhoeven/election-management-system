@@ -108,7 +108,7 @@ const BallotPage: BlitzPage = () => {
         <Form.Item>
           <Dragger
             multiple={false}
-            action="../api/files/upload"
+            action="/api/files/upload"
             maxCount={1}
             onChange={filesChanged}
             accept=".xls,.xlsx"

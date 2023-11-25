@@ -100,7 +100,7 @@ const TemplateConfigPage: BlitzPage = () => {
               setIsDownloadingTemplates(true)
               setTimeout(() => setIsDownloadingTemplates(false), 3000)
             }}
-            href="../api/templates/download"
+            href="/api/files/templates"
           >
             Alle Vorlagen herunterladen
           </Button>
@@ -111,7 +111,7 @@ const TemplateConfigPage: BlitzPage = () => {
               <AntdUpload
                 multiple={false}
                 maxCount={1}
-                action={"../api/files/upload"}
+                action={"/api/files/upload"}
                 customRequest={(options: UploadRequestOption) => uploadFile(template.id, options)}
                 onChange={filesChanged}
                 accept=".docx"

@@ -52,7 +52,7 @@ const CountPage: BlitzPage = () => {
 
     setIsGeneratingResults(true)
 
-    const response = await fetch("../api/results", {
+    const response = await fetch("/api/results", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +78,7 @@ const CountPage: BlitzPage = () => {
         <Form.Item>
           <Dragger
             multiple={false}
-            action="../api/files/upload"
+            action="/api/files/upload"
             maxCount={1}
             onChange={filesChanged}
             accept=".xls,.xlsx"

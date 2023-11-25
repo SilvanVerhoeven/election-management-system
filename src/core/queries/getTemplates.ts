@@ -10,13 +10,16 @@ export type AnnotatedUpload = {
 
 /**
  * Returns the latest upload objects for all template types with uploads.
+ * @param includeUnset Include templates without uploads, returned null for those.
  */
-export default resolver.pipe(async (_: null, ctx: Ctx): Promise<AnnotatedUpload[]> => {
-  return (
-    await Promise.all(
+export default resolver.pipe(
+  async (includeUnset: boolean | null, ctx: Ctx): Promise<AnnotatedUpload[]> => {
+    const templates = await Promise.all(
       Object.values(templateType).map(async (templateId) => {
         return { id: templateId, upload: await getTemplate(templateId, ctx) }
       })
     )
-  ).filter((upload) => !!upload)
-})
+
+    return includeUnset ? templates : templates.filter((upload) => !!upload)
+  }
+)

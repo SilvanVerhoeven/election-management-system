@@ -1,23 +1,17 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import { DownloadOutlined, UploadOutlined } from "@ant-design/icons"
 import { Upload as AntdUpload, Typography, Button, Form, UploadFile, message } from "antd"
 import { UploadRequestOption } from "rc-upload/lib/interface"
-import { DownloadInfo } from "../api/files/upload"
-import { templateType, TemplateType, Upload, UploadType } from "src/types"
+import { templateType, TemplateType, UploadType } from "src/types"
 import { UploadChangeParam } from "antd/es/upload"
 import { downloadUrl } from "src/core/lib/files"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
 import { getAntiCSRFToken } from "@blitzjs/auth"
 import { useQuery } from "@blitzjs/rpc"
-import getTemplates from "src/core/queries/getTemplates"
+import getTemplates, { AnnotatedUpload } from "src/core/queries/getTemplates"
 
 const { Title } = Typography
-
-export interface DonwloadRequestData extends DownloadInfo {
-  originalFilename: string
-  type: string
-}
 
 const TemplateConfigPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
@@ -76,8 +70,20 @@ const TemplateConfigPage: BlitzPage = () => {
     }
   }
 
-  const deleteFile = async (templateId: TemplateType, file: UploadFile) => {
-    return (await fetch(`../api/templates/${templateId}/delete`)).ok
+  const deleteFile = async (template: AnnotatedUpload) => {
+    const antiCSRFToken = getAntiCSRFToken()
+    const response = await fetch(`/api/files/${template.upload?.id}`, {
+      method: "DELETE",
+      headers: {
+        "anti-csrf": antiCSRFToken,
+      },
+    })
+    if (!response.ok) {
+      alert("Deletion failed")
+      console.error(`Deletion failed: ${await response.text()}`)
+      return false
+    }
+    return true
   }
 
   return (
@@ -121,7 +127,7 @@ const TemplateConfigPage: BlitzPage = () => {
                       ]
                     : []
                 }
-                onRemove={(file: UploadFile) => deleteFile(template.id, file)}
+                onRemove={() => deleteFile(template)}
                 showUploadList={{
                   showDownloadIcon: true,
                   downloadIcon: "Herunterladen",

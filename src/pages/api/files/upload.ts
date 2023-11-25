@@ -1,7 +1,6 @@
 import busboy from "busboy"
 import { join } from "path"
 import { mkdir, stat } from "fs/promises"
-import * as dateFns from "date-fns"
 import { filesDir } from "src/core/lib/files"
 import createUpload from "./mutations/createUpload"
 import { Upload, UploadType } from "src/types"
@@ -30,11 +29,6 @@ SuperJson.registerClass(UploadError)
 SuperJson.allowErrorProps("statusCode")
 SuperJson.allowErrorProps("upload")
 
-export interface DownloadInfo {
-  fileDir: string
-  filename: string
-}
-
 /**
  * Errors thrown within the parser's functions are not catched by the `.catch()` in `handler` and would lead to a server crash.
  * That's why we use the `parserError` object to pass error information to the `handler`.
@@ -51,7 +45,6 @@ let parserError: Error | null = null
  * Throws HTTPError failure.
  *
  * Expected form-data content (in that order):
- *   - "method": "db" or something else. If "db", the upload will use the database storing method
  *   - "type" (optional): "template" or "data" (default). Templates will be stored in the template directory, data in the upload directory
  *   - "key" (optional): identifier to retrieve this upload or uploads of the same kind by
  *   - "file": file to upload
@@ -72,20 +65,14 @@ export const handleFileUpload = async (
 ) => {
   if (req.method !== "POST") throw new UploadError(403, "This must be a POST request")
 
-  let useDb: boolean = false
   let type: UploadType = UploadType.DATA
   let key: string | undefined = undefined
   let upload: Upload | null = null
 
-  let filename = ""
-  let dateDir = ""
-
   const formDataParser = busboy({ headers: req.headers })
 
   formDataParser.on("field", (name: string, value: string) => {
-    if (name === "method") {
-      useDb = value == "db"
-    } else if (name === "type") {
+    if (name === "type") {
       type = value as UploadType
     } else if (name === "key") {
       key = value
@@ -97,27 +84,19 @@ export const handleFileUpload = async (
       const { filename: latin1Filename } = fileinfo
       const originalFilename = Buffer.from(latin1Filename, "latin1").toString("utf8")
 
-      dateDir = dateFns.format(Date.now(), "yyyy-MM-dd")
-      const fullUploadDir = useDb ? filesDir() : join(filesDir(), dateDir)
-
       try {
-        await stat(fullUploadDir)
+        await stat(filesDir())
       } catch (e: any) {
         if (e.code === "ENOENT") {
-          await mkdir(fullUploadDir, { recursive: true })
+          await mkdir(filesDir(), { recursive: true })
         } else {
           filestream.destroy()
           throw new UploadError(500, e)
         }
       }
 
-      if (useDb) upload = await createUpload({ filename: originalFilename, type, key }, ctx)
-
-      const uniqueSuffix = `${dateFns.format(Date.now(), "yyyy-MM-dd-HHmmss")}_${Math.round(
-        Math.random() * 1e9
-      )}`
-      filename = !!upload ? upload.id.toString() : `${uniqueSuffix}`
-      const filePath = join(fullUploadDir, filename)
+      upload = await createUpload({ filename: originalFilename, type, key }, ctx)
+      const filePath = join(filesDir(), upload.id.toString())
 
       const output = createWriteStream(filePath, { autoClose: true })
       await stream.pipeline(filestream, output)
@@ -146,11 +125,7 @@ export const handleFileUpload = async (
 
   if (!upload && !parserError) throw new UploadError(400, "File missing in request")
 
-  if (useDb) return upload as unknown as Upload
-  return {
-    fileDir: dateDir,
-    filename,
-  }
+  return upload as unknown as Upload
 }
 
 const handler = api(async (req, res, ctx) => {

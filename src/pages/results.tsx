@@ -1,39 +1,37 @@
 import React, { useState } from "react"
 import { FileAddOutlined, FileSyncOutlined } from "@ant-design/icons"
-import { Upload, Typography, Button, Form, UploadFile, message } from "antd"
+import { UploadRequestOption } from "rc-upload/lib/interface"
+import { Upload as AntdUpload, Typography, Button, Form, UploadFile, message } from "antd"
 import { UploadChangeParam } from "antd/es/upload"
-import { DownloadInfo } from "./api/files/upload"
 import { saveBlob } from "src/core/lib/files"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
+import { Upload } from "src/types"
+import { getAntiCSRFToken } from "@blitzjs/auth"
 
-const { Dragger } = Upload
+const { Dragger } = AntdUpload
 const { Title } = Typography
-
-export interface DonwloadRequestData extends DownloadInfo {
-  originalFilename: string
-  type: string
-}
 
 const CountPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
 
   const [file, setFile] = useState<UploadFile>()
-  const [downloadInfo, setDownloadInfo] = useState<DownloadInfo>()
+  const [upload, setUpload] = useState<Upload>()
   const [isGeneratingResults, setIsGeneratingResults] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isUploadFailed, setIsUploadFailed] = useState(false)
 
   const filesChanged = async (change: UploadChangeParam<UploadFile>) => {
-    const { status, response } = change.file
+    const { status, response, error } = change.file
 
     if (status === "done") {
-      await messageApi.success(`Uplaod erfolgreich`)
-      setDownloadInfo(response)
+      setUpload(response)
       setIsUploadFailed(false)
+      void messageApi.success(`Uplaod erfolgreich`)
     } else if (status === "error") {
-      await messageApi.error(`Upload fehlgeschlagen`)
       setIsUploadFailed(true)
+      console.error(error)
+      void messageApi.error(`Upload fehlgeschlagen`)
     }
 
     if (status !== "uploading") {
@@ -43,29 +41,55 @@ const CountPage: BlitzPage = () => {
     setTimeout(() => setIsUploading(status === "uploading"), 50)
   }
 
-  const onFinish = async () => {
-    const payload = {
-      originalFilename: file?.name,
-      type: file?.type,
-      ...downloadInfo,
+  const handleUpload = async (options: UploadRequestOption) => {
+    const antiCSRFToken = getAntiCSRFToken()
+    const payload = new FormData()
+    payload.append("method", "db")
+    payload.append("file", options.file)
+    try {
+      const response = await fetch(options.action, {
+        method: "POST",
+        headers: {
+          "anti-csrf": antiCSRFToken,
+        },
+        body: payload,
+      })
+      if (response.status !== 200)
+        throw new Error(
+          `Datei konnte nicht hochgeladen werden. Bitte wenden Sie sich an die Systemadministration. Fehler: ${
+            response.status
+          } - ${await response.text()}`
+        )
+      if (options.onSuccess) options.onSuccess(await response.json())
+    } catch (error) {
+      if (options.onError) {
+        options.onError(error)
+      } else {
+        console.error(error)
+      }
     }
+  }
 
+  const onDownload = async () => {
     setIsGeneratingResults(true)
-
-    const response = await fetch("/api/results", {
-      method: "POST",
+    const response = await fetch(`/api/results/${upload?.id}`, {
       headers: {
-        "Content-Type": "application/json",
+        "anti-csrf": getAntiCSRFToken(),
       },
-      body: JSON.stringify(payload),
     })
-
+    if (response.status !== 200) {
+      setIsGeneratingResults(false)
+      throw new Error(
+        `Datei konnte nicht heruntergeladen werden. Bitte wenden Sie sich an die Systemadministration. Fehler: ${
+          response.status
+        } - ${await response.text()}`
+      )
+    }
     await saveBlob(await response.blob(), response.headers.get("content-disposition"))
-
     setIsGeneratingResults(false)
   }
 
-  const onFinishFailed = async (errorInfo: any) => {
+  const onDownloadFailed = async (errorInfo: any) => {
     await messageApi.error(errorInfo)
     setIsGeneratingResults(false)
   }
@@ -74,13 +98,14 @@ const CountPage: BlitzPage = () => {
     <>
       {contextHolder}
       <Title style={{ marginTop: 0 }}>Ergebnis-Protokoll erstellen</Title>
-      <Form name="count-result" onFinish={onFinish} onFinishFailed={onFinishFailed}>
+      <Form name="count-result" onFinish={onDownload} onFinishFailed={onDownloadFailed}>
         <Form.Item>
           <Dragger
             multiple={false}
             action="/api/files/upload"
             maxCount={1}
             onChange={filesChanged}
+            customRequest={handleUpload}
             accept=".xls,.xlsx"
           >
             <p className="ant-upload-drag-icon">

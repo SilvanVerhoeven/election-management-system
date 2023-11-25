@@ -1,12 +1,12 @@
 import ExcelJS from "exceljs"
 
-const styledRowsMargin = 100 // Number of rows which should be styled below the last row already present in a worksheet
+export const styledRowsMargin = 100 // Number of rows which should be styled below the last row already present in a worksheet
 const defaultFont: Partial<ExcelJS.Font> = { name: "Fira Sans" }
 const defaultFontBold: Partial<ExcelJS.Font> = { ...defaultFont, name: "Fira Sans Medium" }
 const defaultAlignment: Partial<ExcelJS.Alignment> = { vertical: "middle" }
 const defaultRowHeight = 20
 
-const defaults = {
+export const defaults = {
   font: defaultFont,
   fontBold: defaultFontBold,
   alignment: defaultAlignment,
@@ -20,7 +20,7 @@ const defaults = {
  * @param worksheet Worksheet to draw column in
  * @param column Index of the column whose right border should be a line, 1-based
  */
-const drawVerticalLine = (worksheet: ExcelJS.Worksheet, column: number) => {
+export const drawVerticalLine = (worksheet: ExcelJS.Worksheet, column: number) => {
   worksheet
     .getRows(1, worksheet.rowCount + styledRowsMargin)
     ?.forEach((row) => (row.getCell(column).border = { right: { style: "thin" } }))
@@ -34,7 +34,7 @@ const drawVerticalLine = (worksheet: ExcelJS.Worksheet, column: number) => {
  * @param column Index of column to fill with IDs
  * @param offset Index of first row to fill
  */
-const generateIds = (
+export const generateIds = (
   worksheet: ExcelJS.Worksheet,
   maximum: number = 100,
   column: number = 1,
@@ -51,7 +51,7 @@ const generateIds = (
  *
  * @param workbook Workbook to apply style to
  */
-const applyDefaultStyle = (workbook: ExcelJS.Workbook) => {
+export const applyDefaultStyle = (workbook: ExcelJS.Workbook) => {
   workbook.eachSheet((sheet) =>
     sheet.getRows(1, sheet.rowCount + styledRowsMargin)?.map((row) => {
       row.font = row.font ? row.font : defaults.font
@@ -70,9 +70,15 @@ const applyDefaultStyle = (workbook: ExcelJS.Workbook) => {
  * @param list Comma-separated list of values
  * @returns Array of items without surrounding whitespace
  */
-const parseList = (list: string): string[] => {
+export const parseList = (list: string): string[] => {
   const items = list.split(",").map((item) => item.trim())
   return items
 }
 
-export { styledRowsMargin, defaults, drawVerticalLine, applyDefaultStyle, generateIds, parseList }
+/**
+ * Formats an array of items into a comma-separated list.
+ *
+ * @param items Items to be formatted
+ * @returns Single string containing comma-separated items
+ */
+export const formatList = (items: string[]): string => items.join(", ")

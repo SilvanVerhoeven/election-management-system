@@ -1,138 +1,15 @@
-import fs from "fs/promises"
-import { CandidateListOrderType, ElectionType, PersonType, Upload, templateType } from "src/types"
-import Excel, { Worksheet } from "exceljs"
-import PizZip from "pizzip"
-import Docxtemplater from "docxtemplater"
-import { parseList } from "./excel"
-import { getFilePath } from "./files"
-
-type _Election = {
-  type: ElectionType
-  committee: string
-  statusGroups: string[]
-  constituencies: string[]
-  numberOfSeats: number
-  pollingStation: string
-}
-
-type _Candidate = {
-  type: PersonType
-  firstName: string
-  lastName: string
-  email?: string
-  status?: string
-  comment?: string
-  electabilityVerifiedOn?: Date
-  isElectionHelper?: boolean
-  subject?: string
-  department?: string
-}
-
-type _CandidateList = {
-  candidates: _Candidate[]
-  name: string
-  shortName: string
-  order: CandidateListOrderType
-}
-
-export type _Ballot = {
-  election: _Election
-  lists: _CandidateList[]
-}
-
-type CandidateRow = {
-  listName: string
-  listShortName: string
-  firstName: string
-  lastName: string
-  order: string
-  unit: string
-  type: string
-}
-
-const fullName = (row: CandidateRow) => `${row.firstName} ${row.lastName}`
-const byOrder = (a: CandidateRow, b: CandidateRow) => a.order.localeCompare(b.order)
-const byName = (a: CandidateRow, b: CandidateRow) => fullName(a).localeCompare(fullName(b))
+import { _ElectionData, _CandidateList } from "./candidates"
+import { Upload } from "src/types"
+import { formatList } from "./excel"
+import { generateWordDocument } from "../word"
 
 /**
- * Parses and returns all candidate lists from the given worksheet.
+ * Restructures the candidate list data into a renderable format.
+ * The layout is expected to display 3 lists in columns next to each other.
  *
- * @param sheet Worksheet with list of all candidates
- * @returns Candidate list
+ * @param lists Candidate lists
+ * @returns Format that can be directly rendered
  */
-const parseCandidateList = (sheet: Worksheet): _CandidateList[] => {
-  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
-  const rows: CandidateRow[] = rawRows.map((row) => {
-    return {
-      listName: row.getCell(1).text,
-      listShortName: row.getCell(2).text,
-      order: row.getCell(3).text,
-      firstName: row.getCell(4).text,
-      lastName: row.getCell(5).text,
-      unit: row.getCell(6).text,
-      type: row.getCell(7).text,
-    }
-  })
-
-  const listDict: { [listName: string]: _CandidateList } = {}
-
-  // initialize lists before sorting to keep list order of excel file
-  rows.forEach((row) => {
-    if (!(row.listName in listDict))
-      listDict[row.listName] = {
-        name: row.listName,
-        shortName: row.listShortName,
-        order:
-          row.order.toLowerCase() === "alphabetisch"
-            ? CandidateListOrderType.ALPHABETICALLY
-            : CandidateListOrderType.NUMERIC,
-        candidates: [],
-      }
-  })
-
-  rows.sort(byName)
-  rows.sort(byOrder)
-  rows.forEach((row) => {
-    const type = row.type.toLowerCase() == "stud" ? PersonType.STUDENT : PersonType.EMPLOYEE
-
-    listDict[row.listName]!.candidates.push({
-      firstName: row.firstName,
-      lastName: row.lastName,
-      type,
-      subject: type == PersonType.STUDENT ? row.unit : undefined,
-      department: type == PersonType.EMPLOYEE ? row.unit : undefined,
-    })
-  })
-
-  return Object.values(listDict)
-}
-
-export const parseBallotExcel = async (buffer: Buffer): Promise<_Ballot> => {
-  const workbook = new Excel.Workbook()
-  await workbook.xlsx.load(buffer)
-
-  const generalSheet = workbook.getWorksheet("Info")
-  const candidatesSheet = workbook.getWorksheet("Kandidaturen")
-
-  if (!generalSheet || !candidatesSheet)
-    throw new Error("Excel file does not contain mandatory worksheets")
-
-  const data: _Ballot = {
-    election: {
-      committee: generalSheet.getCell("C2").text,
-      constituencies: parseList(generalSheet.getCell("C3").text),
-      statusGroups: parseList(generalSheet.getCell("C4").text),
-      numberOfSeats: generalSheet.getCell("C5").value?.valueOf() as number,
-      pollingStation: generalSheet.getCell("C6").text,
-      type:
-        generalSheet.getCell("C6").text == "Losen" ? ElectionType.BALLOT : ElectionType.MAJORITY,
-    },
-    lists: parseCandidateList(candidatesSheet),
-  }
-
-  return data
-}
-
 const structureLists = (lists: _CandidateList[]) => {
   const render = []
   const numberOfColumns = 3
@@ -176,35 +53,21 @@ const structureLists = (lists: _CandidateList[]) => {
  * @param data ballot data to restructure
  * @returns Format that can be directly rendered
  */
-const structureForRender = (data: _Ballot) => {
+const structureForRender = (data: _ElectionData) => {
   return {
     committee: data.election.committee,
-    statusGroup: data.election.statusGroups[0],
+    statusGroup: formatList(data.election.statusGroups),
     lists: structureLists(data.lists),
   }
 }
 
-export const generateBallot = async (data: _Ballot, template: Upload) => {
-  // Load the docx file as binary content
-  const content = await fs.readFile(getFilePath(template), "binary")
-
-  const zip = new PizZip(content)
-
-  const doc = new Docxtemplater(zip, {
-    paragraphLoop: true,
-    linebreaks: true,
-  })
-
-  doc.render(structureForRender(data))
-
-  const buf = doc.getZip().generate({
-    type: "nodebuffer",
-    // compression: DEFLATE adds a compression step.
-    // For a 50MB output document, expect 500ms additional CPU time
-    compression: "DEFLATE",
-  })
-
-  // buf is a nodejs Buffer, you can either write it to a
-  // file or res.send it with express for example.
-  return buf
+/**
+ * Generate a ballot file.
+ *
+ * @param data Data for the ballot
+ * @param template Template to use for file generation
+ * @returns Ballot word document as Buffer
+ */
+export const generateBallot = async (data: _ElectionData, template: Upload): Promise<Buffer> => {
+  return generateWordDocument(() => structureForRender(data), template)
 }

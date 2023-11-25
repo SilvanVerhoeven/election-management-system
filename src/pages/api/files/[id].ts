@@ -1,5 +1,4 @@
 import { api } from "src/blitz-server"
-import { _Ballot } from "src/core/lib/ballot"
 import fs from "fs/promises"
 import getUpload from "./queries/getUpload"
 import { getFilePath } from "src/core/lib/files"

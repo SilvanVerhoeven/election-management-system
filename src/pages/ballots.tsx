@@ -13,11 +13,6 @@ import { Upload } from "src/types"
 const { Dragger } = UploadComponent
 const { Title } = Typography
 
-export interface DonwloadRequestData extends DownloadInfo {
-  originalFilename: string
-  type: string
-}
-
 const BallotPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
 
@@ -31,9 +26,9 @@ const BallotPage: BlitzPage = () => {
     const { status, response, error } = change.file
 
     if (status === "done") {
-      void messageApi.success(`Uplaod erfolgreich`)
       setUpload(response)
       setIsUploadFailed(false)
+      void messageApi.success(`Uplaod erfolgreich`)
     } else if (status === "error") {
       setIsUploadFailed(true)
       console.error(error)
@@ -78,7 +73,7 @@ const BallotPage: BlitzPage = () => {
 
   const onDownload = async () => {
     setIsGeneratingBallot(true)
-    const response = await fetch(`../api/ballots/${upload?.id}`, {
+    const response = await fetch(`/api/ballots/${upload?.id}`, {
       headers: {
         "anti-csrf": getAntiCSRFToken(),
       },

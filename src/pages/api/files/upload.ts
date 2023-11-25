@@ -6,7 +6,7 @@ import { filesDir } from "src/core/lib/files"
 import createUpload from "./mutations/createUpload"
 import { Upload, UploadType } from "src/types"
 import { api } from "src/blitz-server"
-import fs from "fs"
+import { createWriteStream } from "fs"
 import stream from "stream/promises"
 import { NextApiRequest } from "next"
 import { BlitzNextApiResponse } from "@blitzjs/next"
@@ -119,7 +119,7 @@ export const handleFileUpload = async (
       filename = !!upload ? upload.id.toString() : `${uniqueSuffix}`
       const filePath = join(fullUploadDir, filename)
 
-      const output = fs.createWriteStream(filePath, { autoClose: true })
+      const output = createWriteStream(filePath, { autoClose: true })
       await stream.pipeline(filestream, output)
     } catch (error) {
       if (error.statusCode) {

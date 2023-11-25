@@ -1,8 +1,9 @@
 import { api } from "src/blitz-server"
 import { _Ballot } from "src/core/lib/ballot"
-import fs, { rm } from "fs/promises"
+import fs from "fs/promises"
 import getUpload from "./queries/getUpload"
 import { getFilePath } from "src/core/lib/files"
+import deleteUpload from "./mutations/deleteUpload"
 
 export default api(async (req, res, ctx) => {
   if (req.method !== "GET" && req.method !== "DELETE") {
@@ -17,10 +18,9 @@ export default api(async (req, res, ctx) => {
     return
   }
 
-  const upload = await getUpload(parseInt(id), ctx)
-  const filePath = getFilePath(upload)
-
   if (req.method === "GET") {
+    const upload = await getUpload(parseInt(id), ctx)
+    const filePath = getFilePath(upload)
     const buffer = await fs.readFile(filePath)
 
     res.setHeader("content-disposition", `attachment; filename="${upload.filename}"`)
@@ -31,7 +31,7 @@ export default api(async (req, res, ctx) => {
 
   if (req.method === "DELETE") {
     try {
-      await rm(filePath, { recursive: true, force: true })
+      await deleteUpload(parseInt(id), ctx)
     } catch (error) {
       console.error(error)
       res.status(500).send({ error: `Deletion failed` })

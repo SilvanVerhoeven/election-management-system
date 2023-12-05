@@ -7,6 +7,7 @@ import { getFilePath } from "src/core/lib/files"
 import getTemplate from "src/core/queries/getTemplate"
 import { templateType } from "src/types"
 import { parseCandidatesExcel } from "src/core/lib/candidates"
+import getElectionResult from "src/core/queries/getElectionResult"
 
 export default api(async (req, res, ctx) => {
   if (req.method !== "GET") {
@@ -25,10 +26,11 @@ export default api(async (req, res, ctx) => {
   const buffer = await fs.readFile(getFilePath(upload))
 
   const data = await parseCandidatesExcel(buffer)
+  const resultData = await getElectionResult(data, ctx)
 
   const template = await getTemplate(templateType.Results, ctx)
   if (!template) throw new Error("No ballot template set")
-  const wordBuffer = await generateResult(data, template)
+  const wordBuffer = await generateResult(resultData, template)
 
   res.setHeader("content-type", `${mime.getType("docx") || ""}; charset=utf-8`)
   res.setHeader(

@@ -17,10 +17,8 @@ export default api(async (req, res, ctx) => {
 
   for (const template of templates) {
     const zipDir = zip.folder(template.id)
-    if (!!template.upload) {
-      console.log(template.id)
+    if (!!template.upload)
       zipDir.file(template.upload?.filename, await readFile(getFilePath(template.upload)))
-    }
   }
 
   let blob = zip.generate({ type: "nodebuffer" })

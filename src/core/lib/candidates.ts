@@ -11,7 +11,7 @@ type _Election = {
   pollingStation: string
 }
 
-type _Candidate = {
+export type _Candidate = {
   type: PersonType
   firstName: string
   lastName: string
@@ -35,6 +35,17 @@ export type _CandidateList = {
 export type _ElectionData = {
   election: _Election
   lists: _CandidateList[]
+}
+
+export type _EvaluatedList = _CandidateList & {
+  totalVotes: number
+  numberOfSeats: number
+  hareNiemeyerQuotient: string
+}
+
+export type _ElectionResult = {
+  election: _Election
+  lists: _EvaluatedList[]
 }
 
 type CandidateRow = {

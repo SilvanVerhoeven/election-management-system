@@ -1,7 +1,7 @@
-import ExcelJS from "exceljs"
-import { defaults, drawVerticalLine, applyDefaultStyle, generateIds } from "."
+import Excel, { Worksheet } from "exceljs"
+import { defaults, drawVerticalLine, applyDefaultStyle, generateIds, parseList } from "."
 
-const addBasisWorksheet = (workbook: ExcelJS.Workbook) => {
+const addBasisWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Eckdaten")
   sheet.columns = [
     { header: "", width: 3 },
@@ -10,7 +10,7 @@ const addBasisWorksheet = (workbook: ExcelJS.Workbook) => {
   ]
 }
 
-const addConstituenciesWorksheet = (workbook: ExcelJS.Workbook) => {
+const addConstituenciesWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Wahlkreise")
 
   sheet.columns = [
@@ -27,7 +27,7 @@ const addConstituenciesWorksheet = (workbook: ExcelJS.Workbook) => {
   sheet.views = [{ state: "frozen", ySplit: 1 }]
 }
 
-const addElectionsWorksheet = (workbook: ExcelJS.Workbook) => {
+const addElectionsWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Einzelwahlen")
 
   sheet.columns = [
@@ -50,7 +50,7 @@ const addElectionsWorksheet = (workbook: ExcelJS.Workbook) => {
   sheet.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }]
 }
 
-const addCandidatesWorksheet = (workbook: ExcelJS.Workbook) => {
+const addCandidatesWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Kandidaturen")
 
   sheet.columns = [
@@ -89,7 +89,7 @@ const addCandidatesWorksheet = (workbook: ExcelJS.Workbook) => {
   drawVerticalLine(sheet, 2)
 }
 
-const addCandidatesListsWorksheet = (workbook: ExcelJS.Workbook) => {
+const addCandidatesListsWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Wahllisten")
 
   sheet.columns = [
@@ -111,7 +111,7 @@ const addCandidatesListsWorksheet = (workbook: ExcelJS.Workbook) => {
   sheet.views = [{ state: "frozen", xSplit: 1 }]
 }
 
-const addSubjectWorksheet = (workbook: ExcelJS.Workbook) => {
+const addSubjectWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Studiengänge")
 
   sheet.columns = [
@@ -133,7 +133,7 @@ const addSubjectWorksheet = (workbook: ExcelJS.Workbook) => {
  * @returns Basis data of an election
  */
 export const parseWorkbook = async (file: File) => {
-  const workbook = new ExcelJS.Workbook()
+  const workbook = new Excel.Workbook()
   await workbook.xlsx.load(await file.arrayBuffer())
 }
 
@@ -143,8 +143,8 @@ export const parseWorkbook = async (file: File) => {
  *
  * @returns Workbook containing basis data
  */
-export const generateWorkbook = (): ExcelJS.Workbook => {
-  const workbook = new ExcelJS.Workbook()
+export const generateWorkbook = (): Excel.Workbook => {
+  const workbook = new Excel.Workbook()
   workbook.creator = "Election Management System"
 
   addBasisWorksheet(workbook)
@@ -156,4 +156,190 @@ export const generateWorkbook = (): ExcelJS.Workbook => {
   applyDefaultStyle(workbook)
 
   return workbook
+}
+
+export type GeneralData = {
+  name: string
+  startDate: Date
+  endDate: Date
+}
+
+export type SiteData = {
+  name: string
+  shortName: string
+  description: string
+}
+
+export type PollingStationData = {
+  name: string
+  shortName: string
+  siteNameOrShortName: string
+}
+
+export type ConstituencyData = {
+  name: string
+  shortName: string
+  pollingStationNameOrShortName: string
+  description: string
+}
+
+export type StatusGroupData = {
+  name: string
+  shortName: string
+  priority: number
+}
+
+export type CommitteeData = {
+  name: string
+  shortName: string
+}
+
+export type ElectionData = {
+  committeeNameOrShortName: string
+  statusGroupNameOrShortNames: string[]
+  constituencyNameOrShortNames: string[]
+  numberOfSeats: number
+}
+
+export type ElectionsData = {
+  general: GeneralData
+  sites: SiteData[]
+  pollingStations: PollingStationData[]
+  constituencies: ConstituencyData[]
+  statusGroups: StatusGroupData[]
+  committees: CommitteeData[]
+  elections: ElectionData[]
+}
+
+const parseGeneralData = (sheet: Worksheet): GeneralData => {
+  return {
+    name: sheet.getCell("C2").text,
+    startDate: new Date((sheet.getCell("C3").value?.valueOf() || 0) as number),
+    endDate: new Date((sheet.getCell("C4").value?.valueOf() || 0) as number),
+  }
+}
+
+const parseSites = (sheet: Worksheet): SiteData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows
+    .map((row) => {
+      return {
+        shortName: row.getCell(1).text,
+        name: row.getCell(2).text,
+        description: row.getCell(3).text,
+      }
+    })
+    .filter((row) => !!row.name)
+}
+
+const parsePollingStations = (sheet: Worksheet): PollingStationData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows
+    .map((row) => {
+      return {
+        shortName: row.getCell(1).text,
+        name: row.getCell(2).text,
+        siteNameOrShortName: row.getCell(3).text,
+      }
+    })
+    .filter((row) => !!row.name)
+}
+
+const parseConstituencies = (sheet: Worksheet): ConstituencyData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows
+    .map((row) => {
+      return {
+        shortName: row.getCell(1).text,
+        name: row.getCell(2).text,
+        pollingStationNameOrShortName: row.getCell(3).text,
+        description: row.getCell(4).text,
+      }
+    })
+    .filter((row) => !!row.name)
+}
+
+const parseStatusGroups = (sheet: Worksheet): StatusGroupData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows
+    .map((row) => {
+      return {
+        shortName: row.getCell(1).text,
+        name: row.getCell(2).text,
+        priority: (row.getCell(3).value?.valueOf() || 0) as number,
+      }
+    })
+    .filter((row) => !!row.name)
+}
+
+const parseCommittees = (sheet: Worksheet): CommitteeData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows
+    .map((row) => {
+      return {
+        shortName: row.getCell(1).text,
+        name: row.getCell(2).text,
+      }
+    })
+    .filter((row) => !!row.name)
+}
+
+const parseElections = (sheet: Worksheet): ElectionData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows
+    .map((row) => {
+      return {
+        committeeNameOrShortName: row.getCell(1).text,
+        statusGroupNameOrShortNames: parseList(row.getCell(2).text),
+        constituencyNameOrShortNames: parseList(row.getCell(3).text),
+        numberOfSeats: (row.getCell(4).value?.valueOf() || 0) as number,
+      }
+    })
+    .filter(
+      (row) =>
+        !!row.committeeNameOrShortName &&
+        row.statusGroupNameOrShortNames.length > 0 &&
+        row.constituencyNameOrShortNames.length > 0 &&
+        row.numberOfSeats
+    )
+}
+
+/**
+ * Parse excel document with basis data for elections.
+ * Contains general election data, individual elections, candidate lists, candidates and voting results.
+ *
+ * @param buffer Excel document as buffer
+ * @returns Data of the elections
+ */
+export const parseBasisExcel = async (buffer: Buffer): Promise<ElectionsData> => {
+  const workbook = new Excel.Workbook()
+  await workbook.xlsx.load(buffer)
+
+  const generalSheet = workbook.getWorksheet("Eckdaten")
+  const sitesSheet = workbook.getWorksheet("Standorte")
+  const pollingStationsSheet = workbook.getWorksheet("Wahllokale")
+  const constituenciesSheet = workbook.getWorksheet("Wahlkreise")
+  const statusGroupsSheet = workbook.getWorksheet("Statusgruppen")
+  const committeesSheet = workbook.getWorksheet("Gremien")
+  const electionsSheet = workbook.getWorksheet("Einzelwahlen")
+
+  if (!generalSheet) throw new Error("Excel file missing general information worksheet")
+  if (!sitesSheet) throw new Error("Excel file missing sites worksheet")
+  if (!pollingStationsSheet) throw new Error("Excel file missing polling stations worksheet")
+  if (!constituenciesSheet) throw new Error("Excel file missing constituencies worksheet")
+  if (!statusGroupsSheet) throw new Error("Excel file missing status groups worksheet")
+  if (!committeesSheet) throw new Error("Excel file missing committees worksheet")
+  if (!electionsSheet) throw new Error("Excel file missing elections worksheet")
+
+  const data: ElectionsData = {
+    general: parseGeneralData(generalSheet),
+    sites: parseSites(sitesSheet),
+    pollingStations: parsePollingStations(pollingStationsSheet),
+    constituencies: parseConstituencies(constituenciesSheet),
+    statusGroups: parseStatusGroups(statusGroupsSheet),
+    committees: parseCommittees(committeesSheet),
+    elections: parseElections(electionsSheet),
+  }
+
+  return data
 }

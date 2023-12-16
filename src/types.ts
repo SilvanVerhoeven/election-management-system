@@ -1,7 +1,7 @@
 import {
   CandidateList as DbCandidateList,
   CandidateListPosition as DbCandidateListPosition,
-  Campus as DbCampus,
+  Site as DbSite,
   Committee as DbCommittee,
   Constituency as DbConstituency,
   Election as DbElection,
@@ -83,7 +83,7 @@ export type Subject = DbSubject & {
   belongsTo: Faculty
 }
 
-export type Campus = DbCampus
+export type Site = DbSite
 
 export type Constituency = DbConstituency & {
   presenceVotingAt: PollingStation
@@ -102,7 +102,7 @@ export type Faculty = CommonUnitProps & {
 export type Unit = Department | Faculty
 
 export type PollingStation = DbPollingStation & {
-  locatedAt: Campus
+  locatedAt: Site
 }
 
 export type StatusGroup = DbStatusGroup
@@ -119,7 +119,6 @@ export type CandidateList = DbCandidateList & {
 export type CandidateListPosition = DbCandidateListPosition
 
 export type Election = DbElection & {
-  type: ElectionType
   committee: Committee
   statusGroups: StatusGroup[]
   constituencies: Constituency[]
@@ -127,9 +126,7 @@ export type Election = DbElection & {
 
 export type Committee = DbCommittee
 
-export type Elections = DbElections & {
-  elections: Election[]
-}
+export type Elections = DbElections
 
 // --- Election
 

@@ -44,7 +44,6 @@ const BallotPage: BlitzPage = () => {
   const handleUpload = async (options: UploadRequestOption) => {
     const antiCSRFToken = getAntiCSRFToken()
     const payload = new FormData()
-    payload.append("method", "db")
     payload.append("file", options.file)
     try {
       const response = await fetch(options.action, {

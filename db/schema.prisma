@@ -66,43 +66,51 @@ model Token {
 
 // -----------------------------------------------------
 
-model Person {
+model Candidate {
   id                     Int                     @id @default(autoincrement())
   type                   String // ENUM: student/employee
   firstName              String
   lastName               String
-  email                  String
-  status                 String // electable, rejected, String
-  comment                String
-  electabilityVerifiedOn DateTime
-  isElectionHelper       Boolean
+  email                  String?
+  status                 String? // electable, rejected, String
+  comment                String?
+  electabilityVerifiedOn DateTime?
+  isElectionHelper       Boolean?
   matriculationNumber    String? // only students
+  createdAt              DateTime                @default(now())
   subject                Subject?                @relation(fields: [subjectId], references: [id]) // only students 
-  explicitelyVoteAt      Unit?                   @relation(name: "explicitelyVoteAt", fields: [explicitelyVoteAtId], references: [id]) // only students 
-  worksAt                Unit?                   @relation(name: "worksAt", fields: [worksAtId], references: [id]) // only emplyees 
+  explicitelyVoteAt      Unit?                   @relation(name: "explicitelyVoteAt", fields: [explicitelyVoteAtId], references: [id]) // only students
+  worksAt                Unit?                   @relation(name: "worksAt", fields: [worksAtId], references: [id]) // only employees 
   statusGroups           StatusGroup[]
   votingResults          VotingResult[]
   candidateListPositions CandidateListPosition[]
   subjectId              Int?
   explicitelyVoteAtId    Int?
   worksAtId              Int?
+  version                Upload                  @relation(fields: [versionId], references: [id])
+  versionId              Int
 }
 
 model Subject {
-  id          Int      @id @default(autoincrement())
-  name        String
-  shortName   String?
-  belongsTo   Unit     @relation(fields: [belongsToId], references: [id])
-  enrollees   Person[]
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  shortName   String?     @unique
+  belongsTo   Unit        @relation(fields: [belongsToId], references: [id])
+  enrollees   Candidate[]
   belongsToId Int
+  version     Upload      @relation(fields: [versionId], references: [id])
+  versionId   Int
 }
 
-model Campus {
+model Site {
   id              Int              @id @default(autoincrement())
   name            String
   shortName       String?
+  description     String?
   associatedUnits Unit[]
   pollingStations PollingStation[]
+  version         Upload           @relation(fields: [versionId], references: [id])
+  versionId       Int
 }
 
 model Constituency {
@@ -114,6 +122,8 @@ model Constituency {
   presenceVotingAtId Int
   assignedUnits      Unit[]
   elections          Election[]
+  version            Upload         @relation(fields: [versionId], references: [id])
+  versionId          Int
 }
 
 model Unit {
@@ -122,40 +132,48 @@ model Unit {
   name             String
   shortName        String?
   description      String?
-  associatedWith   Campus       @relation(fields: [associatedWithId], references: [id])
+  associatedWith   Site         @relation(fields: [associatedWithId], references: [id])
   assignedTo       Constituency @relation(fields: [assignedToId], references: [id])
   subjects         Subject[]
-  students         Person[]     @relation(name: "explicitelyVoteAt")
-  employees        Person[]     @relation(name: "worksAt")
+  students         Candidate[]  @relation(name: "explicitelyVoteAt")
+  employees        Candidate[]  @relation(name: "worksAt")
   associatedWithId Int
   assignedToId     Int
+  version          Upload       @relation(fields: [versionId], references: [id])
+  versionId        Int
 }
 
 model PollingStation {
   id                 Int            @id @default(autoincrement())
   name               String
   shortName          String?
-  locatedAt          Campus         @relation(fields: [locatedAtId], references: [id])
+  locatedAt          Site           @relation(fields: [locatedAtId], references: [id])
   mainConstituencies Constituency[]
   locatedAtId        Int
+  version            Upload         @relation(fields: [versionId], references: [id])
+  versionId          Int
 }
 
 model StatusGroup {
-  id          Int        @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   shortName   String?
   priority    Int
-  members     Person[]
+  members     Candidate[]
   eligibleFor Election[]
+  version     Upload      @relation(fields: [versionId], references: [id])
+  versionId   Int
 }
 
 model VotingResult {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   numberOfVotes Int
-  candidate     Person   @relation(fields: [candidateId], references: [id])
-  election      Election @relation(fields: [electionId], references: [id])
+  candidate     Candidate @relation(fields: [candidateId], references: [id])
+  election      Election  @relation(fields: [electionId], references: [id])
   electionId    Int
   candidateId   Int
+  version       Upload    @relation(fields: [versionId], references: [id])
+  versionId     Int
 }
 
 model CandidateList {
@@ -164,13 +182,16 @@ model CandidateList {
   shortName          String?
   order              String // ENUM: alphabetical/numeric
   submittedOn        DateTime
+  createdOn          DateTime                @default(now())
   candidatesFor      Election                @relation(fields: [candidatesForId], references: [id])
   candidatesForId    Int
   candidatePositions CandidateListPosition[]
+  version            Upload                  @relation(fields: [versionId], references: [id])
+  versionId          Int
 }
 
 model CandidateListPosition {
-  candidate   Person        @relation(fields: [candidateId], references: [id])
+  candidate   Candidate     @relation(fields: [candidateId], references: [id])
   candidateId Int
   list        CandidateList @relation(fields: [listId], references: [id])
   listId      Int
@@ -181,24 +202,26 @@ model CandidateListPosition {
 
 model Election {
   id                     Int             @id @default(autoincrement())
-  type                   String // ENUM: majority/ballot
   numberOfSeats          Int
-  concerns               Committee       @relation(fields: [committeeId], references: [id])
+  committee              Committee       @relation(fields: [committeeId], references: [id])
   eligibleStatusGroups   StatusGroup[]
   eligibleConstituencies Constituency[]
   votingResults          VotingResult[]
   candidateLists         CandidateList[]
-  runsAt                 Elections?      @relation(fields: [runsAtId], references: [id])
+  runsAt                 Elections       @relation(fields: [runsAtId], references: [id])
   committeeId            Int
-  runsAtId               Int?
+  runsAtId               Int
+  version                Upload          @relation(fields: [versionId], references: [id])
+  versionId              Int
 }
 
 model Committee {
-  id            Int        @id @default(autoincrement())
-  name          String
-  shortName     String?
-  numberOfSeats Int
-  elections     Election[]
+  id        Int        @id @default(autoincrement())
+  name      String
+  shortName String?
+  elections Election[]
+  version   Upload     @relation(fields: [versionId], references: [id])
+  versionId Int
 }
 
 model Elections {
@@ -207,12 +230,26 @@ model Elections {
   startDate DateTime
   endDate   DateTime
   elections Election[]
+  version   Upload     @relation(fields: [versionId], references: [id])
+  versionId Int
 }
 
 model Upload {
-  id         Int      @id @default(autoincrement())
-  filename   String
-  uploadedAt DateTime @default(now())
-  type       String // ENUM: template, data
-  key        String?
+  id             Int              @id @default(autoincrement())
+  filename       String
+  uploadedAt     DateTime         @default(now())
+  type           String // ENUM: template, data
+  key            String?
+  Candidate      Candidate[]
+  Subject        Subject[]
+  Site           Site[]
+  Constituency   Constituency[]
+  Unit           Unit[]
+  PollingStation PollingStation[]
+  StatusGroup    StatusGroup[]
+  VotingResult   VotingResult[]
+  CandidateList  CandidateList[]
+  Election       Election[]
+  Committee      Committee[]
+  Elections      Elections[]
 }

@@ -42,7 +42,6 @@ const TemplateConfigPage: BlitzPage = () => {
   const uploadFile = async (templateId: TemplateType, options: UploadRequestOption<JSON>) => {
     const payload = new FormData()
     const antiCSRFToken = getAntiCSRFToken()
-    payload.append("method", "db")
     payload.append("type", UploadType.TEMPLATE)
     payload.append("key", templateId)
     payload.append("file", options.file)

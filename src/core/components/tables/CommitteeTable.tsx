@@ -1,22 +1,16 @@
 import React from "react"
 import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { StatusGroup } from "src/types"
+import { Committee } from "src/types"
 
-const StatusGroupTable = ({ data }: { data: StatusGroup[] }) => {
-  const columns: ColumnsType<StatusGroup> = [
-    {
-      title: "Priorität",
-      dataIndex: "priority",
-      width: 120,
-      sorter: (a, b) => a.priority - b.priority,
-      defaultSortOrder: "ascend",
-    },
+const CommitteeTable = ({ data }: { data: Committee[] }) => {
+  const columns: ColumnsType<Committee> = [
     {
       title: "Kürzel",
       dataIndex: "shortName",
       width: 200,
       sorter: (a, b) => (a.shortName ?? "").localeCompare(b.shortName ?? ""),
+      defaultSortOrder: "ascend",
     },
     {
       title: "Name",
@@ -30,4 +24,4 @@ const StatusGroupTable = ({ data }: { data: StatusGroup[] }) => {
   )
 }
 
-export default StatusGroupTable
+export default CommitteeTable

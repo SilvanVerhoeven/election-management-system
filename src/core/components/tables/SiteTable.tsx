@@ -1,27 +1,26 @@
 import React from "react"
 import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { StatusGroup } from "src/types"
+import { Site } from "src/types"
 
-const StatusGroupTable = ({ data }: { data: StatusGroup[] }) => {
-  const columns: ColumnsType<StatusGroup> = [
-    {
-      title: "Priorität",
-      dataIndex: "priority",
-      width: 120,
-      sorter: (a, b) => a.priority - b.priority,
-      defaultSortOrder: "ascend",
-    },
+const SiteTable = ({ data }: { data: Site[] }) => {
+  const columns: ColumnsType<Site> = [
     {
       title: "Kürzel",
       dataIndex: "shortName",
       width: 200,
       sorter: (a, b) => (a.shortName ?? "").localeCompare(b.shortName ?? ""),
+      defaultSortOrder: "ascend",
     },
     {
       title: "Name",
       dataIndex: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: "Beschreibung",
+      dataIndex: "description",
+      sorter: (a, b) => (a.description ?? "").localeCompare(b.name ?? ""),
     },
   ]
 
@@ -30,4 +29,4 @@ const StatusGroupTable = ({ data }: { data: StatusGroup[] }) => {
   )
 }
 
-export default StatusGroupTable
+export default SiteTable

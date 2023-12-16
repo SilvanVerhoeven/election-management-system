@@ -47,7 +47,7 @@ const structureLists = (lists: _EvaluatedList[]) => {
     return {
       name: list.name,
       shortName: list.shortName,
-      order: list.order == CandidateListOrderType.ALPHABETICALLY ? "Alphabetisch" : "Rangfolge",
+      order: list.order == CandidateListOrderType.ALPHABETICALLY ? "Alphabetisch" : "Numerisch",
       votes: list.totalVotes,
       share: ((list.totalVotes / totalVotes) * 100).toFixed(2),
       hnQuotient: list.hareNiemeyerQuotient,

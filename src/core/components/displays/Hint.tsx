@@ -1,4 +1,4 @@
-import { Tooltip, Typography } from "antd"
+import { Tooltip } from "antd"
 import { PropsWithChildren } from "react"
 
 export interface HintProps extends PropsWithChildren {

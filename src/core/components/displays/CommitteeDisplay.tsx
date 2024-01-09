@@ -1,7 +1,6 @@
-import { Typography } from "antd"
 import { Committee } from "src/types"
-import Hint from "./Hint"
 import { TextProps } from "antd/es/typography/Text"
+import AbbreveationDisplay from "./AbbreveationDisplay"
 
 export interface CommitteeDisplayProps extends TextProps {
   committee: Committee
@@ -9,19 +8,9 @@ export interface CommitteeDisplayProps extends TextProps {
 
 export const getDisplayText = (committee: Committee) => committee.shortName ?? committee.name
 
-const { Text } = Typography
-
 const CommitteeDisplay = ({ committee, ...textProps }: CommitteeDisplayProps) => {
   return (
-    <>
-      {committee.shortName ? (
-        <Hint hint={committee.name}>
-          <Text {...textProps}>{getDisplayText(committee)}</Text>
-        </Hint>
-      ) : (
-        <Text {...textProps}>{getDisplayText(committee)}</Text>
-      )}
-    </>
+    <AbbreveationDisplay text={committee.name} abbreveation={committee.shortName} {...textProps} />
   )
 }
 

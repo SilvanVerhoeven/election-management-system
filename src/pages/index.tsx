@@ -24,14 +24,13 @@ import Title from "antd/lib/typography/Title"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
 import { UploadChangeParam } from "antd/es/upload"
-import { Upload, UploadType } from "src/types"
+import { Basis, UploadType } from "src/types"
 import { UploadRequestOption } from "rc-upload/lib/interface"
 import { getAntiCSRFToken } from "@blitzjs/auth"
-import { useMutation, useQuery } from "@blitzjs/rpc"
-import importElection from "./api/basis/mutations/importElection"
+import { useQuery } from "@blitzjs/rpc"
 import dayjs from "dayjs"
 import SiteTable from "src/core/components/tables/SiteTable"
-import getElectionsBasis, { ElectionBasis } from "./api/basis/queries/getElectionsBasis"
+import getBasis from "./api/basis/queries/getBasis"
 import PollingStationTable from "src/core/components/tables/PollingStationTable"
 import CommitteeTable from "src/core/components/tables/CommitteeTable"
 
@@ -42,15 +41,14 @@ const HomePage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false)
 
-  const [upload, setUpload] = useState<Upload>()
-  const [importElectionMutation] = useMutation(importElection)
   const [isUploading, setIsUploading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  const [initialData, { refetch: refetchData }] = useQuery(getElectionsBasis, null, {
+  const [initialData, { refetch: refetchData }] = useQuery(getBasis, null, {
     refetchOnWindowFocus: false,
   })
-  const [data, setDisplayData] = useState<ElectionBasis>()
+  const [data, setDisplayData] = useState<Basis | null>()
+
 
   const [form] = Form.useForm()
   const updateForm = useCallback(() => {
@@ -156,28 +154,33 @@ const HomePage: BlitzPage = () => {
     setIsDownloadingExcel(false)
   }
 
-  const loadExcel = useCallback(
-    async (upload: Upload) => {
-      setIsUpdating(true)
-      try {
-        await importElectionMutation(upload.id)
-      } finally {
-        setDisplayData((await refetchData()).data)
-        setIsUpdating(false)
-      }
-    },
-    [importElectionMutation, refetchData]
-  )
+  const updateDisplay = useCallback(async () => {
+    setIsUpdating(true)
+    try {
+      setDisplayData((await refetchData()).data)
+    } finally {
+      setIsUpdating(false)
+    }
+  }, [refetchData])
 
-  const handleFileChange: UploadProps["onChange"] = (change: UploadChangeParam<UploadFile>) => {
-    const { status, response, error } = change.file
+  const handleFileChange: UploadProps["onChange"] = async (
+    change: UploadChangeParam<UploadFile>
+  ) => {
+    const { status, error } = change.file
 
     if (status === "done") {
-      setUpload(response)
+      await updateDisplay()
       void messageApi.success(`Uplaod erfolgreich`)
     } else if (status === "error") {
       console.error(error)
-      void messageApi.error(`Upload fehlgeschlagen`)
+      void messageApi.error(
+        <>
+          <Text strong>Upload fehlgeschlagen</Text>
+          <br />
+          <Text>{`${error}`}</Text>
+        </>,
+        10
+      )
     }
   }
 
@@ -196,6 +199,10 @@ const HomePage: BlitzPage = () => {
         },
         body: payload,
       })
+      if (response.status == 400)
+        throw new Error(
+          `Die Basisdatei hat fehlerhaften Inhalt. Bitte korrigieren Sie die Datei und laden Sie sie erneut hoch. Fehler: ${await response.text()}`
+        )
       if (response.status !== 200)
         throw new Error(
           `Basisdatei konnte nicht hochgeladen werden. Bitte wenden Sie sich an die Systemadministration. Fehler: ${
@@ -213,13 +220,9 @@ const HomePage: BlitzPage = () => {
     setIsUploading(false)
   }
 
-  useEffect(() => {
-    if (!upload) return
-    void loadExcel(upload)
-  }, [upload, loadExcel])
-
   return (
     <>
+      {contextHolder}
       <Title style={{ marginTop: 0 }}>Basisdaten einer Wahl</Title>
       <Form layout="vertical" onFinish={downloadExcel} onFinishFailed={downloadFailed} form={form}>
         <Space wrap>

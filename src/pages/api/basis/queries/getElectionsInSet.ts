@@ -4,14 +4,14 @@ import db from "db"
 import { Election } from "src/types"
 
 /**
- * Returns individual elections running at the given elections.
+ * Returns individual elections part of the given election set.
  *
  * @returns Elections running at the given election
  */
-export default resolver.pipe(async (electionsId: number, ctx: Ctx): Promise<Election[]> => {
+export default resolver.pipe(async (electionSetId: number, ctx: Ctx): Promise<Election[]> => {
   const elections = await db.election.findMany({
     where: {
-      runsAtId: electionsId,
+      runsAtId: electionSetId,
     },
     include: {
       committee: true,

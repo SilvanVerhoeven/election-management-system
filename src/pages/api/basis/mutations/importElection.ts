@@ -5,13 +5,13 @@ import { getFilePath } from "src/core/lib/files"
 import { readFile } from "fs/promises"
 import createSite from "./createSite"
 import {
-  CommitteeData,
-  ConstituencyData,
-  ElectionData,
-  GeneralData,
-  PollingStationData,
-  SiteData,
-  StatusGroupData,
+  ParsedCommitteeData,
+  ParsedConstituencyData,
+  ParsedElectionData,
+  ParsedGeneralData,
+  ParsedPollingStationData,
+  ParsedSiteData,
+  ParsedStatusGroupData,
   parseBasisExcel,
 } from "src/core/lib/excel/basis"
 import createPollingStation from "./createPollingStation"
@@ -24,10 +24,10 @@ import createElection from "./createElection"
 import findCommittee from "../queries/findCommittee"
 import findStatusGroup from "../queries/findStatusGroup"
 import findConstituency from "../queries/findConstituency"
-import createElections from "./createElections"
+import createElectionSet from "./createElectionSet"
 
-const importGeneralData = async (general: GeneralData, uploadId: number, ctx: Ctx) =>
-  await createElections(
+const importGeneralData = async (general: ParsedGeneralData, uploadId: number, ctx: Ctx) =>
+  await createElectionSet(
     {
       name: general.name,
       startDate: general.startDate,
@@ -37,7 +37,7 @@ const importGeneralData = async (general: GeneralData, uploadId: number, ctx: Ct
     ctx
   )
 
-const importSites = async (sites: SiteData[], uploadId: number, ctx: Ctx) =>
+const importSites = async (sites: ParsedSiteData[], uploadId: number, ctx: Ctx) =>
   await Promise.all(
     sites.map(
       async (site) =>
@@ -54,7 +54,7 @@ const importSites = async (sites: SiteData[], uploadId: number, ctx: Ctx) =>
   )
 
 const importPollingStations = async (
-  pollingStations: PollingStationData[],
+  pollingStations: ParsedPollingStationData[],
   uploadId: number,
   ctx: Ctx
 ) => {
@@ -78,7 +78,7 @@ const importPollingStations = async (
 }
 
 const importConstituencies = async (
-  constituencies: ConstituencyData[],
+  constituencies: ParsedConstituencyData[],
   uploadId: number,
   ctx: Ctx
 ) => {
@@ -101,7 +101,11 @@ const importConstituencies = async (
   )
 }
 
-const importStatusGroups = async (statusGroups: StatusGroupData[], uploadId: number, ctx: Ctx) => {
+const importStatusGroups = async (
+  statusGroups: ParsedStatusGroupData[],
+  uploadId: number,
+  ctx: Ctx
+) => {
   await Promise.all(
     statusGroups.map(
       async (statusGroup) =>
@@ -118,7 +122,7 @@ const importStatusGroups = async (statusGroups: StatusGroupData[], uploadId: num
   )
 }
 
-const importCommittees = async (committees: CommitteeData[], uploadId: number, ctx: Ctx) => {
+const importCommittees = async (committees: ParsedCommitteeData[], uploadId: number, ctx: Ctx) => {
   await Promise.all(
     committees.map(
       async (committee) =>
@@ -135,7 +139,7 @@ const importCommittees = async (committees: CommitteeData[], uploadId: number, c
 }
 
 const importElections = async (
-  elections: ElectionData[],
+  elections: ParsedElectionData[],
   runsAtId: number,
   uploadId: number,
   ctx: Ctx

@@ -158,60 +158,60 @@ export const generateWorkbook = (): Excel.Workbook => {
   return workbook
 }
 
-export type GeneralData = {
+export type ParsedGeneralData = {
   name: string
   startDate: Date
   endDate: Date
 }
 
-export type SiteData = {
+export type ParsedSiteData = {
   name: string
   shortName: string
   description: string
 }
 
-export type PollingStationData = {
+export type ParsedPollingStationData = {
   name: string
   shortName: string
   siteNameOrShortName: string
 }
 
-export type ConstituencyData = {
+export type ParsedConstituencyData = {
   name: string
   shortName: string
   pollingStationNameOrShortName: string
   description: string
 }
 
-export type StatusGroupData = {
+export type ParsedStatusGroupData = {
   name: string
   shortName: string
   priority: number
 }
 
-export type CommitteeData = {
+export type ParsedCommitteeData = {
   name: string
   shortName: string
 }
 
-export type ElectionData = {
+export type ParsedElectionData = {
   committeeNameOrShortName: string
   statusGroupNameOrShortNames: string[]
   constituencyNameOrShortNames: string[]
   numberOfSeats: number
 }
 
-export type ElectionsData = {
-  general: GeneralData
-  sites: SiteData[]
-  pollingStations: PollingStationData[]
-  constituencies: ConstituencyData[]
-  statusGroups: StatusGroupData[]
-  committees: CommitteeData[]
-  elections: ElectionData[]
+export type ParsedBasisData = {
+  general: ParsedGeneralData
+  sites: ParsedSiteData[]
+  pollingStations: ParsedPollingStationData[]
+  constituencies: ParsedConstituencyData[]
+  statusGroups: ParsedStatusGroupData[]
+  committees: ParsedCommitteeData[]
+  elections: ParsedElectionData[]
 }
 
-const parseGeneralData = (sheet: Worksheet): GeneralData => {
+const parseGeneralData = (sheet: Worksheet): ParsedGeneralData => {
   return {
     name: sheet.getCell("C2").text,
     startDate: new Date((sheet.getCell("C3").value?.valueOf() || 0) as number),
@@ -219,7 +219,7 @@ const parseGeneralData = (sheet: Worksheet): GeneralData => {
   }
 }
 
-const parseSites = (sheet: Worksheet): SiteData[] => {
+const parseSites = (sheet: Worksheet): ParsedSiteData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
@@ -232,7 +232,7 @@ const parseSites = (sheet: Worksheet): SiteData[] => {
     .filter((row) => !!row.name)
 }
 
-const parsePollingStations = (sheet: Worksheet): PollingStationData[] => {
+const parsePollingStations = (sheet: Worksheet): ParsedPollingStationData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
@@ -245,7 +245,7 @@ const parsePollingStations = (sheet: Worksheet): PollingStationData[] => {
     .filter((row) => !!row.name)
 }
 
-const parseConstituencies = (sheet: Worksheet): ConstituencyData[] => {
+const parseConstituencies = (sheet: Worksheet): ParsedConstituencyData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
@@ -259,7 +259,7 @@ const parseConstituencies = (sheet: Worksheet): ConstituencyData[] => {
     .filter((row) => !!row.name)
 }
 
-const parseStatusGroups = (sheet: Worksheet): StatusGroupData[] => {
+const parseStatusGroups = (sheet: Worksheet): ParsedStatusGroupData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
@@ -272,7 +272,7 @@ const parseStatusGroups = (sheet: Worksheet): StatusGroupData[] => {
     .filter((row) => !!row.name)
 }
 
-const parseCommittees = (sheet: Worksheet): CommitteeData[] => {
+const parseCommittees = (sheet: Worksheet): ParsedCommitteeData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
@@ -284,7 +284,7 @@ const parseCommittees = (sheet: Worksheet): CommitteeData[] => {
     .filter((row) => !!row.name)
 }
 
-const parseElections = (sheet: Worksheet): ElectionData[] => {
+const parseElections = (sheet: Worksheet): ParsedElectionData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
@@ -311,7 +311,7 @@ const parseElections = (sheet: Worksheet): ElectionData[] => {
  * @param buffer Excel document as buffer
  * @returns Data of the elections
  */
-export const parseBasisExcel = async (buffer: Buffer): Promise<ElectionsData> => {
+export const parseBasisExcel = async (buffer: Buffer): Promise<ParsedBasisData> => {
   const workbook = new Excel.Workbook()
   await workbook.xlsx.load(buffer)
 
@@ -331,7 +331,7 @@ export const parseBasisExcel = async (buffer: Buffer): Promise<ElectionsData> =>
   if (!committeesSheet) throw new Error("Excel file missing committees worksheet")
   if (!electionsSheet) throw new Error("Excel file missing elections worksheet")
 
-  const data: ElectionsData = {
+  const data: ParsedBasisData = {
     general: parseGeneralData(generalSheet),
     sites: parseSites(sitesSheet),
     pollingStations: parsePollingStations(pollingStationsSheet),

@@ -12,6 +12,7 @@ import { BlitzNextApiResponse } from "@blitzjs/next"
 import { Ctx } from "blitz"
 import deleteUpload from "./mutations/deleteUpload"
 import SuperJson from "superjson"
+import importElection from "../basis/mutations/importElection"
 
 export class UploadError extends Error {
   name = "UploadError"
@@ -45,7 +46,7 @@ let parserError: Error | null = null
  * Throws HTTPError failure.
  *
  * Expected form-data content (in that order):
- *   - "type" (optional): "template" or "data" (default). Templates will be stored in the template directory, data in the upload directory
+ *   - "type" (optional): "template" or "data" (default)
  *   - "key" (optional): identifier to retrieve this upload or uploads of the same kind by
  *   - "file": file to upload
  *
@@ -131,15 +132,26 @@ export const handleFileUpload = async (
 const handler = api(async (req, res, ctx) => {
   parserError = null
 
-  await handleFileUpload(req, res, ctx)
-    .then((result) => {
-      if (parserError) throw parserError // If we have an output error, we want to throw it here to catch it below
-      res.status(200).json(result)
-    })
-    .catch(async (error) => {
-      if (error.upload) await deleteUpload(error.upload.id, ctx)
-      res.status(error.statusCode ?? 400).end(error.message)
-    })
+  try {
+    const upload = await handleFileUpload(req, res, ctx)
+
+    if (parserError) throw parserError // If we have an output error, we want to throw it here to catch it below
+
+    try {
+      if (upload.type == UploadType.DATA) await importElection(upload.id, ctx)
+    } catch (error) {
+      throw {
+        statusCode: 400,
+        ...error,
+        message: "DB import failed: " + error.message,
+      }
+    }
+
+    res.status(200).json(upload)
+  } catch (error) {
+    if (error.upload) await deleteUpload(error.upload.id, ctx)
+    res.status(error.statusCode ?? 500).end(error.message)
+  }
 })
 
 export default handler

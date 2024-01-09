@@ -208,7 +208,7 @@ model Election {
   eligibleConstituencies Constituency[]
   votingResults          VotingResult[]
   candidateLists         CandidateList[]
-  runsAt                 Elections       @relation(fields: [runsAtId], references: [id])
+  runsAt                 ElectionSet     @relation(fields: [runsAtId], references: [id])
   committeeId            Int
   runsAtId               Int
   version                Upload          @relation(fields: [versionId], references: [id])
@@ -224,7 +224,7 @@ model Committee {
   versionId Int
 }
 
-model Elections {
+model ElectionSet {
   id        Int        @id @default(autoincrement())
   name      String
   startDate DateTime
@@ -251,5 +251,5 @@ model Upload {
   CandidateList  CandidateList[]
   Election       Election[]
   Committee      Committee[]
-  Elections      Elections[]
+  ElectionSet    ElectionSet[]
 }

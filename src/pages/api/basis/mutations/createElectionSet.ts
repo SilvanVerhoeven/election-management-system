@@ -10,13 +10,13 @@ export interface ElectionProps {
 }
 
 /**
- * Creates a new elections collection.
+ * Creates a new election set.
  *
- * @returns Newly created elections collection in the bare DB form
+ * @returns Newly created election set in the bare DB form
  */
 export default resolver.pipe(
   async ({ name, startDate, endDate, uploadId }: ElectionProps, ctx: Ctx) => {
-    return await db.elections.create({
+    return await db.electionSet.create({
       data: {
         name,
         startDate,

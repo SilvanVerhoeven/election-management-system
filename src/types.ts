@@ -5,8 +5,8 @@ import {
   Committee as DbCommittee,
   Constituency as DbConstituency,
   Election as DbElection,
-  Elections as DbElections,
-  Person as DbPerson,
+  ElectionSet as DbElectionSet,
+  Candidate as DbCandidate,
   PollingStation as DbPollingStation,
   StatusGroup as DbStatusGroup,
   Subject as DbSubject,
@@ -60,19 +60,19 @@ export type Data = DbUpload & {
   key?: string
 }
 
-export type Person = DbPerson & {
-  status: "electable" | "rejected" | string
+type CandidateBase = DbCandidate & {
+  status: CandidateStatusType | string
   statusGroups: StatusGroup[]
 }
 
-export type Student = Person & {
+export type Student = CandidateBase & {
   type: PersonType.STUDENT
   matriculationNumber: string | null
   subject: Subject | null
   explicitelyVoteAt: Faculty | null
 }
 
-export type Employee = Person & {
+export type Employee = CandidateBase & {
   type: PersonType.EMPLOYEE
   worksAt: Department | null
 }
@@ -108,7 +108,7 @@ export type PollingStation = DbPollingStation & {
 export type StatusGroup = DbStatusGroup
 
 export type VotingResult = DbVotingResult & {
-  candidate: Person
+  candidate: Candidate
 }
 
 export type CandidateList = DbCandidateList & {
@@ -126,7 +126,17 @@ export type Election = DbElection & {
 
 export type Committee = DbCommittee
 
-export type Elections = DbElections
+export type ElectionSet = DbElectionSet
+
+export type Basis = {
+  general: ElectionSet
+  sites: Site[]
+  pollingStations: PollingStation[]
+  constituencies: Constituency[]
+  statusGroups: StatusGroup[]
+  committees: Committee[]
+  elections: Election[]
+}
 
 // --- Election
 
@@ -169,7 +179,7 @@ export type StatusGroupResultRender = {
 }
 
 export type CommitteeResultRender = {
-  electionsName: string // Name of the overall elections this committee was elected at
+  electionSetName: string
   committee: string
   statusGroups: StatusGroupResultRender[]
   publishedOn: Date

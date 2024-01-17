@@ -7,7 +7,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
 }
 
 // --------------------------------------
@@ -67,7 +68,7 @@ model Token {
 // -----------------------------------------------------
 
 model Candidate {
-  id                     Int                     @id @default(autoincrement())
+  globalId               Int
   type                   String // ENUM: student/employee
   firstName              String
   lastName               String
@@ -77,179 +78,250 @@ model Candidate {
   electabilityVerifiedOn DateTime?
   isElectionHelper       Boolean?
   matriculationNumber    String? // only students
-  createdAt              DateTime                @default(now())
-  subject                Subject?                @relation(fields: [subjectId], references: [id]) // only students 
-  explicitelyVoteAt      Unit?                   @relation(name: "explicitelyVoteAt", fields: [explicitelyVoteAtId], references: [id]) // only students
-  worksAt                Unit?                   @relation(name: "worksAt", fields: [worksAtId], references: [id]) // only employees 
-  statusGroups           StatusGroup[]
-  votingResults          VotingResult[]
-  candidateListPositions CandidateListPosition[]
-  subjectId              Int?
-  explicitelyVoteAtId    Int?
-  worksAtId              Int?
-  version                Upload                  @relation(fields: [versionId], references: [id])
+  createdAt              DateTime  @default(now())
+  subjectId              Int? // Subject globalId
+  explicitelyVoteAtId    Int? // Unit globalId
+  worksAtId              Int? // Unit globalId
+  version                Version   @relation(fields: [versionId], references: [id])
   versionId              Int
+
+  // REFERENCED BY
+  // VotingResult
+  // CandidateListPosition
+  // StatusGroupMembership
+
+  @@id([globalId, versionId])
 }
 
 model Subject {
-  id          Int         @id @default(autoincrement())
-  name        String      @unique
-  shortName   String?     @unique
-  belongsTo   Unit        @relation(fields: [belongsToId], references: [id])
-  enrollees   Candidate[]
-  belongsToId Int
-  version     Upload      @relation(fields: [versionId], references: [id])
+  globalId    Int
+  name        String  @unique
+  shortName   String? @unique
+  belongsToId Int // Unit globalId
+  version     Version @relation(fields: [versionId], references: [id])
   versionId   Int
+
+  // REFERENCED BY
+  // Candidate
+
+  @@id([globalId, versionId])
 }
 
 model Site {
-  id              Int              @id @default(autoincrement())
-  name            String
-  shortName       String?
-  description     String?
-  associatedUnits Unit[]
-  pollingStations PollingStation[]
-  version         Upload           @relation(fields: [versionId], references: [id])
-  versionId       Int
+  globalId    Int
+  name        String
+  shortName   String?
+  description String?
+  version     Version @relation(fields: [versionId], references: [id])
+  versionId   Int
+
+  // REFERENCED BY
+  // PollingStation
+  // Unit
+
+  @@id([globalId, versionId])
 }
 
 model Constituency {
-  id                 Int            @id @default(autoincrement())
+  globalId           Int
   name               String
   shortName          String?
   description        String?
-  presenceVotingAt   PollingStation @relation(fields: [presenceVotingAtId], references: [id])
-  presenceVotingAtId Int
-  assignedUnits      Unit[]
-  elections          Election[]
-  version            Upload         @relation(fields: [versionId], references: [id])
+  presenceVotingAtId Int // PollingStation globalId
+  version            Version @relation(fields: [versionId], references: [id])
   versionId          Int
+
+  // REFERENCED BY
+  // Unit
+  // ConstituencyEligibility
+
+  @@id([globalId, versionId])
 }
 
 model Unit {
-  id               Int          @id @default(autoincrement())
+  globalId         Int
   type             String //ENUM: faculty/department
   name             String
   shortName        String?
   description      String?
-  associatedWith   Site         @relation(fields: [associatedWithId], references: [id])
-  assignedTo       Constituency @relation(fields: [assignedToId], references: [id])
-  subjects         Subject[]
-  students         Candidate[]  @relation(name: "explicitelyVoteAt")
-  employees        Candidate[]  @relation(name: "worksAt")
-  associatedWithId Int
-  assignedToId     Int
-  version          Upload       @relation(fields: [versionId], references: [id])
+  associatedWithId Int // Site globalId
+  assignedToId     Int // Constituency globalId
+  version          Version @relation(fields: [versionId], references: [id])
   versionId        Int
+
+  // REFERENCED BY
+  // Subject
+  // Candidate
+
+  @@id([globalId, versionId])
 }
 
 model PollingStation {
-  id                 Int            @id @default(autoincrement())
-  name               String
-  shortName          String?
-  locatedAt          Site           @relation(fields: [locatedAtId], references: [id])
-  mainConstituencies Constituency[]
-  locatedAtId        Int
-  version            Upload         @relation(fields: [versionId], references: [id])
-  versionId          Int
+  globalId    Int
+  name        String
+  shortName   String?
+  locatedAtId Int // Site globalId
+  version     Version @relation(fields: [versionId], references: [id])
+  versionId   Int
+
+  // REFERENCED BY
+  // Constituency
+
+  @@id([globalId, versionId])
 }
 
 model StatusGroup {
-  id          Int         @id @default(autoincrement())
-  name        String
-  shortName   String?
-  priority    Int
-  members     Candidate[]
-  eligibleFor Election[]
-  version     Upload      @relation(fields: [versionId], references: [id])
-  versionId   Int
+  globalId  Int
+  name      String
+  shortName String?
+  priority  Int
+  version   Version @relation(fields: [versionId], references: [id])
+  versionId Int
+
+  // REFERENCED BY
+  // StatusGroupMembership
+  // StatusGroupEligibility
+
+  @@id([globalId, versionId])
 }
 
 model VotingResult {
-  id            Int       @id @default(autoincrement())
+  globalId      Int
   numberOfVotes Int
-  candidate     Candidate @relation(fields: [candidateId], references: [id])
-  election      Election  @relation(fields: [electionId], references: [id])
-  electionId    Int
-  candidateId   Int
-  version       Upload    @relation(fields: [versionId], references: [id])
+  electionId    Int // Election globalId
+  candidateId   Int // Candidate globalId
+  version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
+
+  @@id([globalId, versionId])
 }
 
 model CandidateList {
-  id                 Int                     @id @default(autoincrement())
-  name               String
-  shortName          String?
-  order              String // ENUM: alphabetical/numeric
-  submittedOn        DateTime
-  createdOn          DateTime                @default(now())
-  candidatesFor      Election                @relation(fields: [candidatesForId], references: [id])
-  candidatesForId    Int
-  candidatePositions CandidateListPosition[]
-  version            Upload                  @relation(fields: [versionId], references: [id])
-  versionId          Int
+  globalId        Int
+  name            String
+  shortName       String?
+  order           String // ENUM: alphabetical/numeric
+  submittedOn     DateTime
+  createdOn       DateTime @default(now())
+  candidatesForId Int // Election globalId
+  version         Version  @relation(fields: [versionId], references: [id])
+  versionId       Int
+
+  // REFERENCED BY
+  // CandidateListPosition
+
+  @@id([globalId, versionId])
 }
 
 model CandidateListPosition {
-  candidate   Candidate     @relation(fields: [candidateId], references: [id])
-  candidateId Int
-  list        CandidateList @relation(fields: [listId], references: [id])
-  listId      Int
+  candidateId Int // Candidate globalId
+  listId      Int // CandidateList globalId
   position    Int? // 0-indexed Position of candidate on candidate list, may be undefined for alphabetical lists
 
   @@id([candidateId, listId])
 }
 
+model StatusGroupMembership {
+  candidateId   Int // Candidate globalId
+  statusGroupId Int // StatusGroup globalId
+  deleted       Boolean @default(false)
+  version       Version @relation(fields: [versionId], references: [id])
+  versionId     Int
+
+  @@id([candidateId, statusGroupId, versionId])
+}
+
+model StatusGroupEligibility {
+  statusGroupId Int // StatusGroup globalId
+  electionId    Int // Election globalId
+  deleted       Boolean @default(false)
+  version       Version @relation(fields: [versionId], references: [id])
+  versionId     Int
+
+  @@id([electionId, statusGroupId, versionId])
+}
+
+model ConstituencyEligibility {
+  constituencyId Int // Constituency globalId
+  electionId     Int // Election globalId
+  deleted        Boolean @default(false)
+  version        Version @relation(fields: [versionId], references: [id])
+  versionId      Int
+
+  @@id([electionId, constituencyId, versionId])
+}
+
 model Election {
-  id                     Int             @id @default(autoincrement())
-  numberOfSeats          Int
-  committee              Committee       @relation(fields: [committeeId], references: [id])
-  eligibleStatusGroups   StatusGroup[]
-  eligibleConstituencies Constituency[]
-  votingResults          VotingResult[]
-  candidateLists         CandidateList[]
-  runsAt                 ElectionSet     @relation(fields: [runsAtId], references: [id])
-  committeeId            Int
-  runsAtId               Int
-  version                Upload          @relation(fields: [versionId], references: [id])
-  versionId              Int
+  globalId      Int
+  numberOfSeats Int
+  committeeId   Int // Committee globalId
+  runsAtId      Int // ElectionSet globalId
+  version       Version @relation(fields: [versionId], references: [id])
+  versionId     Int
+
+  // REFERENCED BY
+  // CandidateList
+  // StatusGroupEligibility
+  // ConstituencyEligibility
+
+  @@id([globalId, versionId])
 }
 
 model Committee {
-  id        Int        @id @default(autoincrement())
+  globalId  Int
   name      String
   shortName String?
-  elections Election[]
-  version   Upload     @relation(fields: [versionId], references: [id])
+  version   Version @relation(fields: [versionId], references: [id])
   versionId Int
+
+  // REFERENCED BY
+  // Election
+
+  @@id([globalId, versionId])
 }
 
 model ElectionSet {
-  id        Int        @id @default(autoincrement())
+  globalId  Int
   name      String
   startDate DateTime
   endDate   DateTime
-  elections Election[]
-  version   Upload     @relation(fields: [versionId], references: [id])
+  version   Version  @relation(fields: [versionId], references: [id])
   versionId Int
+
+  // REFERENCED BY
+  // Election
+
+  @@id([globalId, versionId])
+}
+
+model Version {
+  id                      Int                       @id @default(autoincrement())
+  createdAt               DateTime                  @default(now())
+  name                    String?
+  ElectionSet             ElectionSet[]
+  Committee               Committee[]
+  Election                Election[]
+  CandidateList           CandidateList[]
+  VotingResult            VotingResult[]
+  Candidate               Candidate[]
+  Subject                 Subject[]
+  Site                    Site[]
+  Constituency            Constituency[]
+  Unit                    Unit[]
+  PollingStation          PollingStation[]
+  StatusGroup             StatusGroup[]
+  ConstituencyEligibility ConstituencyEligibility[]
+  StatusGroupEligibility  StatusGroupEligibility[]
+  StatusGroupMembership   StatusGroupMembership[]
+  Upload                  Upload?
 }
 
 model Upload {
-  id             Int              @id @default(autoincrement())
-  filename       String
-  uploadedAt     DateTime         @default(now())
-  type           String // ENUM: template, data
-  key            String?
-  Candidate      Candidate[]
-  Subject        Subject[]
-  Site           Site[]
-  Constituency   Constituency[]
-  Unit           Unit[]
-  PollingStation PollingStation[]
-  StatusGroup    StatusGroup[]
-  VotingResult   VotingResult[]
-  CandidateList  CandidateList[]
-  Election       Election[]
-  Committee      Committee[]
-  ElectionSet    ElectionSet[]
+  id         Int      @id @default(autoincrement())
+  filename   String
+  uploadedAt DateTime @default(now())
+  type       String // ENUM: template, data
+  key        String?
+  version    Version? @relation(fields: [versionId], references: [id])
+  versionId  Int?     @unique
 }

@@ -4,14 +4,17 @@ import db from "db"
 import { StatusGroup } from "src/types"
 
 /**
- * Returns all status groups of the given version.
+ * Returns the latest version of all status groups.
  *
- * @returns Status Groups for the given version
+ * @returns All Status Groups
  */
-export default resolver.pipe(async (versionId: number, ctx: Ctx): Promise<StatusGroup[]> => {
+export default resolver.pipe(async (_: null, ctx: Ctx): Promise<StatusGroup[]> => {
   return await db.statusGroup.findMany({
-    where: {
-      versionId,
+    distinct: ["globalId"],
+    orderBy: {
+      version: {
+        createdAt: "desc",
+      },
     },
   })
 })

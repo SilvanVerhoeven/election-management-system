@@ -2,17 +2,30 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
 import { PollingStation } from "src/types"
+import getSite from "./getSite"
 
 /**
- * Returns all polling stations of the given version.
+ * Returns the latest version of all polling stations.
  *
- * @returns Polling Stations for the given version
+ * @returns All Polling Stations
  */
-export default resolver.pipe(async (versionId: number, ctx: Ctx): Promise<PollingStation[]> => {
-  return await db.pollingStation.findMany({
-    where: {
-      versionId,
+export default resolver.pipe(async (_: null, ctx: Ctx): Promise<PollingStation[]> => {
+  const dbPollingStations = await db.pollingStation.findMany({
+    distinct: ["globalId"],
+    orderBy: {
+      version: {
+        createdAt: "desc",
+      },
     },
-    include: { locatedAt: true },
   })
+
+  return await Promise.all(
+    dbPollingStations.map(async (dbPollingStation) => {
+      const site = await getSite({ globalId: dbPollingStation.locatedAtId }, ctx)
+      return {
+        ...dbPollingStation,
+        locatedAt: site,
+      }
+    })
+  )
 })

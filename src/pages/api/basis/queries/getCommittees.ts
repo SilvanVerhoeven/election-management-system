@@ -4,14 +4,17 @@ import db from "db"
 import { Committee } from "src/types"
 
 /**
- * Returns all committees of the given version.
+ * Returns the latest version of all committees.
  *
- * @returns Committees for the given version
+ * @returns All Committees
  */
-export default resolver.pipe(async (versionId: number, ctx: Ctx): Promise<Committee[]> => {
+export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Committee[]> => {
   return await db.committee.findMany({
-    where: {
-      versionId,
+    distinct: ["globalId"],
+    orderBy: {
+      version: {
+        createdAt: "desc",
+      },
     },
   })
 })

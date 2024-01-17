@@ -13,7 +13,7 @@ export default resolver.pipe(async (_: null, ctx: Ctx): Promise<ElectionSet | nu
   return await db.electionSet.findFirst({
     orderBy: {
       version: {
-        uploadedAt: "desc",
+        createdAt: "desc",
       },
     },
   })

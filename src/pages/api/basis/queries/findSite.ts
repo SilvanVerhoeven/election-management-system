@@ -5,19 +5,19 @@ import { Site } from "src/types"
 
 export interface FindSiteProps {
   nameOrShortName: string
-  uploadId: number
+  versionId?: number
 }
 
 /**
  * Finds a site with the given data.
  *
  * @param nameOrShortName Name or short name of the site to find
- * @param uploadId ID of the upload this site was imported from
+ * @param versionId ID of the wanted version. Defaults to the latest
  * @throws NotFoundError if site with these attributes cannot be found
  * @returns Found site
  */
 export default resolver.pipe(
-  async ({ nameOrShortName, uploadId }: FindSiteProps, ctx: Ctx): Promise<Site> => {
+  async ({ nameOrShortName, versionId }: FindSiteProps, ctx: Ctx): Promise<Site> => {
     return await db.site.findFirstOrThrow({
       where: {
         OR: [
@@ -28,8 +28,9 @@ export default resolver.pipe(
             shortName: nameOrShortName,
           },
         ],
-        versionId: uploadId,
+        versionId,
       },
+      orderBy: { version: { createdAt: "desc" } },
     })
   }
 )

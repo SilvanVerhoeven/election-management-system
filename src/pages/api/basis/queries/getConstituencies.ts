@@ -2,17 +2,33 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
 import { Constituency } from "src/types"
+import getPollingStation from "./getPollingStation"
 
 /**
- * Returns all constituencies of the given version.
+ * Returns the latest version of all constituencies.
  *
- * @returns Constituencies for the given version
+ * @returns All Constituencies
  */
-export default resolver.pipe(async (versionId: number, ctx: Ctx): Promise<Constituency[]> => {
-  return await db.constituency.findMany({
-    where: {
-      versionId,
+export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Constituency[]> => {
+  const dbConstituencies = await db.constituency.findMany({
+    distinct: ["globalId"],
+    orderBy: {
+      version: {
+        createdAt: "desc",
+      },
     },
-    include: { presenceVotingAt: { include: { locatedAt: true } } },
   })
+
+  return await Promise.all(
+    dbConstituencies.map(async (dbConstituency): Promise<Constituency> => {
+      const pollingStation = await getPollingStation(
+        { globalId: dbConstituency.presenceVotingAtId },
+        ctx
+      )
+      return {
+        ...dbConstituency,
+        presenceVotingAt: pollingStation,
+      }
+    })
+  )
 })

@@ -25,174 +25,144 @@ import findCommittee from "../queries/findCommittee"
 import findStatusGroup from "../queries/findStatusGroup"
 import findConstituency from "../queries/findConstituency"
 import createElectionSet from "./createElectionSet"
+import createVersion from "./createVersion"
+import { Constituency, StatusGroup } from "src/types"
 
-const importGeneralData = async (general: ParsedGeneralData, uploadId: number, ctx: Ctx) =>
+const importGeneralData = async (general: ParsedGeneralData, versionId: number, ctx: Ctx) =>
   await createElectionSet(
     {
       name: general.name,
       startDate: general.startDate,
       endDate: general.endDate,
-      uploadId,
+      versionId,
     },
     ctx
   )
 
-const importSites = async (sites: ParsedSiteData[], uploadId: number, ctx: Ctx) =>
-  await Promise.all(
-    sites.map(
-      async (site) =>
-        await createSite(
-          {
-            name: site.name,
-            shortName: site.shortName,
-            description: site.description,
-            uploadId,
-          },
-          ctx
-        )
+const importSites = async (sites: ParsedSiteData[], versionId: number, ctx: Ctx) => {
+  for (const site of sites) {
+    await createSite(
+      {
+        name: site.name,
+        shortName: site.shortName,
+        description: site.description,
+        versionId,
+      },
+      ctx
     )
-  )
+  }
+}
 
 const importPollingStations = async (
   pollingStations: ParsedPollingStationData[],
-  uploadId: number,
+  versionId: number,
   ctx: Ctx
 ) => {
-  await Promise.all(
-    pollingStations.map(async (pollingStation) => {
-      const site = await findSite(
-        { nameOrShortName: pollingStation.siteNameOrShortName, uploadId },
-        ctx
-      )
-      await createPollingStation(
-        {
-          name: pollingStation.name,
-          shortName: pollingStation.shortName,
-          locatedAtId: site.id,
-          uploadId,
-        },
-        ctx
-      )
-    })
-  )
+  for (const pollingStation of pollingStations) {
+    const site = await findSite({ nameOrShortName: pollingStation.siteNameOrShortName }, ctx)
+    await createPollingStation(
+      {
+        name: pollingStation.name,
+        shortName: pollingStation.shortName,
+        locatedAtId: site.globalId,
+        versionId,
+      },
+      ctx
+    )
+  }
 }
 
 const importConstituencies = async (
   constituencies: ParsedConstituencyData[],
-  uploadId: number,
+  versionId: number,
   ctx: Ctx
 ) => {
-  await Promise.all(
-    constituencies.map(async (constituencies) => {
-      const pollingStation = await findPollingStation(
-        { nameOrShortName: constituencies.pollingStationNameOrShortName, uploadId },
-        ctx
-      )
-      await createConstituency(
-        {
-          name: constituencies.name,
-          shortName: constituencies.shortName,
-          presenceVotingAtId: pollingStation.id,
-          uploadId,
-        },
-        ctx
-      )
-    })
-  )
+  for (const constituency of constituencies) {
+    const pollingStation = await findPollingStation(
+      { nameOrShortName: constituency.pollingStationNameOrShortName },
+      ctx
+    )
+    await createConstituency(
+      {
+        name: constituency.name,
+        shortName: constituency.shortName,
+        presenceVotingAtId: pollingStation.globalId,
+        versionId,
+      },
+      ctx
+    )
+  }
 }
 
 const importStatusGroups = async (
   statusGroups: ParsedStatusGroupData[],
-  uploadId: number,
+  versionId: number,
   ctx: Ctx
 ) => {
-  await Promise.all(
-    statusGroups.map(
-      async (statusGroup) =>
-        await createStatusGroup(
-          {
-            name: statusGroup.name,
-            shortName: statusGroup.shortName,
-            priority: statusGroup.priority,
-            uploadId,
-          },
-          ctx
-        )
+  for (const statusGroup of statusGroups) {
+    await createStatusGroup(
+      {
+        name: statusGroup.name,
+        shortName: statusGroup.shortName,
+        priority: statusGroup.priority,
+        versionId,
+      },
+      ctx
     )
-  )
+  }
 }
 
-const importCommittees = async (committees: ParsedCommitteeData[], uploadId: number, ctx: Ctx) => {
-  await Promise.all(
-    committees.map(
-      async (committee) =>
-        await createCommittee(
-          {
-            name: committee.name,
-            shortName: committee.shortName,
-            uploadId,
-          },
-          ctx
-        )
+const importCommittees = async (committees: ParsedCommitteeData[], versionId: number, ctx: Ctx) => {
+  for (const committee of committees) {
+    await createCommittee(
+      {
+        name: committee.name,
+        shortName: committee.shortName,
+        versionId,
+      },
+      ctx
     )
-  )
+  }
 }
 
 const importElections = async (
   elections: ParsedElectionData[],
   runsAtId: number,
-  uploadId: number,
+  versionId: number,
   ctx: Ctx
 ) => {
-  await Promise.all(
-    elections.map(async (election) => {
-      const committee = await findCommittee(
-        {
-          nameOrShortName: election.committeeNameOrShortName,
-          uploadId,
-        },
-        ctx
-      )
+  for (const election of elections) {
+    const committee = await findCommittee(
+      {
+        nameOrShortName: election.committeeNameOrShortName,
+      },
+      ctx
+    )
 
-      const statusGroups = await Promise.all(
-        election.statusGroupNameOrShortNames.map(
-          async (nameOrShortName) =>
-            await findStatusGroup(
-              {
-                nameOrShortName,
-                uploadId,
-              },
-              ctx
-            )
-        )
-      )
+    const statusGroups: StatusGroup[] = []
+    for (const nameOrShortName of election.statusGroupNameOrShortNames) {
+      statusGroups.push(await findStatusGroup({ nameOrShortName }, ctx))
+    }
 
-      const constituencies = await Promise.all(
-        election.constituencyNameOrShortNames.map(
-          async (nameOrShortName) =>
-            await findConstituency(
-              {
-                nameOrShortName,
-                uploadId,
-              },
-              ctx
-            )
-        )
-      )
+    const constituencies: Constituency[] = []
+    for (const nameOrShortName of election.constituencyNameOrShortNames) {
+      constituencies.push(await findConstituency({ nameOrShortName }, ctx))
+    }
 
+    JSON.stringify(
       await createElection(
         {
-          committeeId: committee.id,
-          eligibleStatusGroupIds: statusGroups.map((sg) => sg.id),
-          eligibleConstituencyIds: constituencies.map((c) => c.id),
+          committeeId: committee.globalId,
+          eligibleStatusGroupIds: Array.from(new Set(statusGroups.map((sg) => sg.globalId))),
+          eligibleConstituencyIds: Array.from(new Set(constituencies.map((c) => c.globalId))),
           numberOfSeats: election.numberOfSeats,
           runsAtId,
-          uploadId,
+          versionId,
         },
         ctx
       )
-    })
-  )
+    )
+  }
 }
 
 /**
@@ -203,11 +173,13 @@ export default resolver.pipe(async (uploadId: number, ctx: Ctx) => {
   const buffer = await readFile(getFilePath(upload))
   const data = await parseBasisExcel(buffer)
 
-  const elections = await importGeneralData(data.general, uploadId, ctx)
-  await importSites(data.sites, uploadId, ctx)
-  await importPollingStations(data.pollingStations, uploadId, ctx)
-  await importConstituencies(data.constituencies, uploadId, ctx)
-  await importStatusGroups(data.statusGroups, uploadId, ctx)
-  await importCommittees(data.committees, uploadId, ctx)
-  await importElections(data.elections, elections.id, uploadId, ctx)
+  const version = await createVersion({ uploadId: upload.id }, ctx)
+
+  const electionSet = await importGeneralData(data.general, version.id, ctx)
+  await importSites(data.sites, version.id, ctx)
+  await importPollingStations(data.pollingStations, version.id, ctx)
+  await importConstituencies(data.constituencies, version.id, ctx)
+  await importStatusGroups(data.statusGroups, version.id, ctx)
+  await importCommittees(data.committees, version.id, ctx)
+  await importElections(data.elections, electionSet.globalId, version.id, ctx)
 })

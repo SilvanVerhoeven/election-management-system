@@ -2,23 +2,27 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
 import { Constituency } from "src/types"
+import getPollingStation from "./getPollingStation"
 
 export interface FindConstituencyProps {
   nameOrShortName: string
-  uploadId: number
+  versionId?: number
 }
 
 /**
  * Finds a constituency with the given data.
  *
  * @param nameOrShortName Name or short name of the constituency to find
- * @param uploadId ID of the upload this constituency was imported from
+ * @param versionId Returns committee of this version, if given. Returns latest version otherwise
  * @throws NotFoundError if constituency with these attributes cannot be found
  * @returns Found constituency
  */
 export default resolver.pipe(
-  async ({ nameOrShortName, uploadId }: FindConstituencyProps, ctx: Ctx): Promise<Constituency> => {
-    return await db.constituency.findFirstOrThrow({
+  async (
+    { nameOrShortName, versionId }: FindConstituencyProps,
+    ctx: Ctx
+  ): Promise<Constituency> => {
+    const dbConstituency = await db.constituency.findFirstOrThrow({
       where: {
         OR: [
           {
@@ -28,13 +32,19 @@ export default resolver.pipe(
             shortName: nameOrShortName,
           },
         ],
-        versionId: uploadId,
+        versionId,
       },
-      include: {
-        presenceVotingAt: {
-          include: { locatedAt: true },
-        },
-      },
+      orderBy: { version: { createdAt: "desc" } },
     })
+
+    const pollingStation = await getPollingStation(
+      { globalId: dbConstituency.presenceVotingAtId },
+      ctx
+    )
+
+    return {
+      ...dbConstituency,
+      presenceVotingAt: pollingStation,
+    }
   }
 )

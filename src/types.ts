@@ -48,7 +48,12 @@ export enum UploadType {
   DATA = "data",
 }
 
-export type Upload = DbUpload
+
+export type Version = DbVersion
+
+export type Upload = DbUpload & {
+  version?: Version
+}
 
 export type Template = DbUpload & {
   type: UploadType.TEMPLATE

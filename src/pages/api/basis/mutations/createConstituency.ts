@@ -1,37 +1,54 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
-import db from "db"
+import db, { Constituency as DbConstituency } from "db"
 
 export interface ConstituencyProps {
   name: string
   shortName?: string
   description?: string
   presenceVotingAtId: number
-  uploadId: number
+  versionId: number
 }
 
 /**
- * Creates a new polling station with the given data.
+ * Creates a new constituency, unless it matches another constituency completely.
  *
- * @param name Name of the constituency
- * @param shortName Abbreveation of the constituency
- * @param description Description of the constituency
- * @param presenceVotingAtId ID of the polling station at which voters of this constituency can vote in presence
- * @param uploadId ID of the upload data belongs to
- * @returns Newly created constituency in the bare DB form
+ * @returns Newly created or matching constituency in the bare DB form
  */
 export default resolver.pipe(
   async (
-    { name, shortName, description, presenceVotingAtId, uploadId }: ConstituencyProps,
+    { name, shortName, description, presenceVotingAtId, versionId }: ConstituencyProps,
     ctx: Ctx
-  ) => {
+  ): Promise<DbConstituency> => {
+    const match = await db.constituency.findFirst({
+      where: {
+        OR: [{ name }, { shortName }],
+      },
+      orderBy: { version: { createdAt: "desc" } },
+    })
+
+    if (match) {
+      const isCompleteMatch =
+        match.name == name &&
+        match.shortName == (shortName || null) &&
+        match.description == (description || null) &&
+        match.presenceVotingAtId == presenceVotingAtId
+
+      if (isCompleteMatch) return match
+    }
+
+    const newConstituencyId = match
+      ? match.globalId
+      : ((await db.constituency.findFirst({ orderBy: { globalId: "desc" } }))?.globalId ?? 0) + 1
+
     return await db.constituency.create({
       data: {
+        globalId: newConstituencyId,
         name,
         shortName: shortName || null,
         description: description || null,
-        presenceVotingAt: { connect: { id: presenceVotingAtId } },
-        version: { connect: { id: uploadId } },
+        presenceVotingAtId,
+        version: { connect: { id: versionId } },
       },
     })
   }

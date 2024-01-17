@@ -1,0 +1,54 @@
+import { resolver } from "@blitzjs/rpc"
+import { Ctx } from "blitz"
+import db, { Election as DbElection } from "db"
+import getStatusGroupsForElection from "./getStatusGroupsForElection"
+import getConstituenciesForElection from "./getConstituenciesForElection"
+
+export interface FindElectionProps {
+  committeeId: number
+  runsAtId: number
+  eligibleStatusGroupIds: number[]
+  eligibleConstituencyIds: number[]
+}
+
+const haveEqualValues = (a: number[], b: number[]) =>
+  a.concat().sort().join(",") == b.concat().sort().join(",")
+
+/**
+ * Finds election with the given data.
+ *
+ * @returns Matching Election in bare DB form or null
+ */
+export default resolver.pipe(
+  async (
+    { committeeId, runsAtId, eligibleConstituencyIds, eligibleStatusGroupIds }: FindElectionProps,
+    ctx: Ctx
+  ): Promise<DbElection | null> => {
+    const possibleMatches = await db.election.findMany({
+      where: {
+        committeeId,
+        runsAtId,
+      },
+      orderBy: { version: { createdAt: "desc" } },
+    })
+
+    for (const possibleMatch of possibleMatches) {
+      const eligibleStatusGroups = await getStatusGroupsForElection(possibleMatch.globalId, ctx)
+      const eligibleConstituencies = await getConstituenciesForElection(possibleMatch.globalId, ctx)
+
+      const isRelationMatch =
+        haveEqualValues(
+          eligibleConstituencies.map((c) => c.globalId),
+          eligibleConstituencyIds
+        ) &&
+        haveEqualValues(
+          eligibleStatusGroups.map((sg) => sg.globalId),
+          eligibleStatusGroupIds
+        )
+
+      if (isRelationMatch) return possibleMatch
+    }
+
+    return null
+  }
+)

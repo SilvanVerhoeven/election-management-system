@@ -4,6 +4,8 @@
   "scripts": {
     "dev": "blitz dev",
     "build": "blitz build",
+    "reset": "yarn reset:purge",
+    "reset:purge": "blitz prisma migrate reset --force",
     "start": "blitz start",
     "studio": "blitz prisma studio",
     "lint": "eslint --ignore-path .gitignore --ext .js,.ts,.tsx .",

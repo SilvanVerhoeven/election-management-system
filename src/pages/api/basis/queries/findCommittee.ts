@@ -5,19 +5,19 @@ import { Committee } from "src/types"
 
 export interface FindCommitteeProps {
   nameOrShortName: string
-  uploadId: number
+  versionId?: number
 }
 
 /**
  * Finds a committee with the given data.
  *
  * @param nameOrShortName Name or short name of the committee to find
- * @param uploadId ID of the upload this committee was imported from
+ * @param versionId Returns committee of this version, if given. Returns latest version otherwise
  * @throws NotFoundError if committee with these attributes cannot be found
  * @returns Found committee
  */
 export default resolver.pipe(
-  async ({ nameOrShortName, uploadId }: FindCommitteeProps, ctx: Ctx): Promise<Committee> => {
+  async ({ nameOrShortName, versionId }: FindCommitteeProps, ctx: Ctx): Promise<Committee> => {
     return await db.committee.findFirstOrThrow({
       where: {
         OR: [
@@ -28,8 +28,9 @@ export default resolver.pipe(
             shortName: nameOrShortName,
           },
         ],
-        versionId: uploadId,
+        versionId,
       },
+      orderBy: { version: { createdAt: "desc" } },
     })
   }
 )

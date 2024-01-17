@@ -1,6 +1,6 @@
 import { CandidateListOrderType, ElectionType, PersonType } from "src/types"
 import Excel, { Worksheet } from "exceljs"
-import { parseList } from "./excel"
+import { parseList } from "./parse"
 
 type _Election = {
   type: ElectionType

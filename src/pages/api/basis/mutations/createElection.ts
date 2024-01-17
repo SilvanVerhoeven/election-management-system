@@ -21,6 +21,7 @@ const setStatusGroupEligibilitiesAsDeleted = async (
     where: {
       electionId,
       statusGroupId: { notIn: eligibleStatusGroupIds },
+      deleted: false,
     },
   })
   await Promise.all(
@@ -46,7 +47,7 @@ const createNewStatusGroupEligibilities = async (
     eligibleStatusGroupIds.map(async (statusGroupId) => {
       await db.statusGroupEligibility.upsert({
         where: {
-          electionId_statusGroupId_versionId: { electionId, statusGroupId, versionId },
+          electionId_statusGroupId_deleted: { electionId, statusGroupId, deleted: false },
         },
         update: {},
         create: {
@@ -68,6 +69,7 @@ const setConstituencyEligibilitiesAsDeleted = async (
     where: {
       electionId,
       constituencyId: { notIn: eligibleConstituencyIds },
+      deleted: false,
     },
   })
   await Promise.all(
@@ -95,7 +97,7 @@ const createNewConstituencyEligibilities = async (
       async (constituencyId) =>
         await db.constituencyEligibility.upsert({
           where: {
-            electionId_constituencyId_versionId: { electionId, constituencyId, versionId },
+            electionId_constituencyId_deleted: { electionId, constituencyId, deleted: false },
           },
           update: {},
           create: {

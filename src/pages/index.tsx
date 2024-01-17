@@ -10,44 +10,45 @@ import {
   Row,
   Col,
   Typography,
-  Switch,
-  message,
 } from "antd"
-import type { TabsProps, UploadFile, UploadProps } from "antd"
+import type { TabsProps, UploadFile } from "antd"
 import { UploadOutlined } from "@ant-design/icons"
 import ConstituencyTable from "src/core/components/tables/ConstituencyTable"
 import StatusGroupTable from "src/core/components/tables/StatusGroupTable"
 import ElectionTable from "src/core/components/tables/ElectionTable"
-import CandidateTable from "src/core/components/tables/CandidateTable"
 import { saveBlob } from "src/core/lib/files"
 import Title from "antd/lib/typography/Title"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
 import { UploadChangeParam } from "antd/es/upload"
-import { Basis, UploadType } from "src/types"
-import { UploadRequestOption } from "rc-upload/lib/interface"
-import { getAntiCSRFToken } from "@blitzjs/auth"
+import { Basis } from "src/types"
 import { useQuery } from "@blitzjs/rpc"
 import dayjs from "dayjs"
 import SiteTable from "src/core/components/tables/SiteTable"
 import getBasis from "./api/basis/queries/getBasis"
 import PollingStationTable from "src/core/components/tables/PollingStationTable"
 import CommitteeTable from "src/core/components/tables/CommitteeTable"
+import useUpload from "src/core/hooks/useUpload"
 
 const { RangePicker } = DatePicker
 const { Text } = Typography
 
 const HomePage: BlitzPage = () => {
-  const [messageApi, contextHolder] = message.useMessage()
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false)
 
-  const [isUploading, setIsUploading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
   const [initialData, { refetch: refetchData }] = useQuery(getBasis, null, {
     refetchOnWindowFocus: false,
   })
   const [data, setDisplayData] = useState<Basis | null>()
+
+  const { isUploading,
+    messageApi,
+    contextHolder,
+    handleFileChange: _handleFileChange,
+    uploadFile
+  } = useUpload()
 
 
   const [form] = Form.useForm()
@@ -122,24 +123,6 @@ const HomePage: BlitzPage = () => {
       label: "Einzelne Wahlen",
       children: <ElectionTable data={data?.elections ?? []} />,
     },
-    {
-      key: "candidates",
-      label: "Kandidaturen",
-      children: (
-        <CandidateTable
-          data={[
-            {
-              firstname: "Mika",
-              surname: "Mustermensch",
-              statusGroup: { shortName: "Stud", name: "Studierende", priority: 4 },
-              course: "IT-Systems Engineering",
-              faculty: "DE",
-              id: "128523",
-            },
-          ]}
-        />
-      ),
-    },
   ]
 
   const downloadExcel = async () => {
@@ -163,62 +146,24 @@ const HomePage: BlitzPage = () => {
     }
   }, [refetchData])
 
-  const handleFileChange: UploadProps["onChange"] = async (
-    change: UploadChangeParam<UploadFile>
-  ) => {
-    const { status, error } = change.file
-
-    if (status === "done") {
-      await updateDisplay()
-      void messageApi.success(`Uplaod erfolgreich`)
-    } else if (status === "error") {
-      console.error(error)
-      void messageApi.error(
-        <>
-          <Text strong>Upload fehlgeschlagen</Text>
-          <br />
-          <Text>{`${error}`}</Text>
-        </>,
-        10
-      )
-    }
-  }
-
-  const uploadFile = async (options: UploadRequestOption<JSON>) => {
-    setIsUploading(true)
-    const payload = new FormData()
-    const antiCSRFToken = getAntiCSRFToken()
-    payload.append("type", UploadType.DATA)
-    payload.append("key", "basis")
-    payload.append("file", options.file)
-    try {
-      const response = await fetch(options.action, {
-        method: "POST",
-        headers: {
-          "anti-csrf": antiCSRFToken,
-        },
-        body: payload,
-      })
-      if (response.status == 400)
-        throw new Error(
-          `Die Basisdatei hat fehlerhaften Inhalt. Bitte korrigieren Sie die Datei und laden Sie sie erneut hoch. Fehler: ${await response.text()}`
-        )
-      if (response.status !== 200)
-        throw new Error(
-          `Basisdatei konnte nicht hochgeladen werden. Bitte wenden Sie sich an die Systemadministration. Fehler: ${
-            response.status
-          } - ${await response.text()}`
-        )
-      if (options.onSuccess) options.onSuccess(await response.json())
-    } catch (error) {
-      if (options.onError) {
-        options.onError(error)
-      } else {
+  const handleFileChange = async (change: UploadChangeParam<UploadFile>) =>
+    _handleFileChange(
+      change,
+      async () => {
+        await updateDisplay()
+        void messageApi.success(`Upload erfolgreich`)
+      },
+      async (_, error) => {
         console.error(error)
-      }
-    }
-    setIsUploading(false)
-  }
+        void messageApi.error(
+          <>
+            <Text strong>Upload fehlgeschlagen</Text>
+            <br />
+            <Text>{`${error}`}</Text>
+          </>,
+          10
+        )
+      })
 
   return (
     <>
@@ -230,21 +175,17 @@ const HomePage: BlitzPage = () => {
             Basisdaten speichern
           </Button>
           <UploadComponent
-            action="/api/files/upload"
+            action="/api/import/basis"
             maxCount={1}
             showUploadList={false}
             onChange={handleFileChange}
-            customRequest={uploadFile}
+            customRequest={(options) => uploadFile(options, "basis")}
             accept=".xlsx"
           >
             <Button icon={<UploadOutlined />} loading={isUploading || isUpdating}>
-              Öffnen
+              Importieren
             </Button>
           </UploadComponent>
-          <Space>
-            <Text disabled>Automatisch speichern</Text>
-            <Switch disabled />
-          </Space>
         </Space>
         <Tabs defaultActiveKey="1" items={items} />
       </Form>

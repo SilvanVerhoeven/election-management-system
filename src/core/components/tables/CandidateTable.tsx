@@ -1,53 +1,43 @@
 import React from "react"
-import { Table, Tag } from "antd"
+import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { StatusGroup } from "./StatusGroupTable"
-
-export interface Candidate {
-  firstname: string
-  surname: string
-  id: string
-  statusGroup: StatusGroup
-  faculty: string
-  course: string
-}
+import { Candidate } from "src/types"
+import StatusGroupDisplay from "../displays/StatusGroupDisplay"
 
 const CandidateTable = ({ data }: { data: Candidate[] }) => {
   const columns: ColumnsType<Candidate> = [
     {
       title: "Vorname",
-      dataIndex: ["firstname"],
+      dataIndex: ["firstName"],
       width: 200,
-      sorter: (a, b) => a.firstname.localeCompare(b.firstname),
+      sorter: (a, b) => a.firstName.localeCompare(b.firstName),
       defaultSortOrder: "ascend",
     },
     {
       title: "Nachname",
-      dataIndex: ["surname"],
+      dataIndex: ["lastName"],
       width: 200,
-      sorter: (a, b) => a.surname.localeCompare(b.surname),
+      sorter: (a, b) => a.lastName.localeCompare(b.lastName),
     },
     {
       title: "Statusgruppe",
-      dataIndex: ["statusGroup", "shortName"],
-      render: (_, { statusGroup }) => (
-        <Tag key={statusGroup.shortName}>{statusGroup.shortName}</Tag>
-      ),
+      render: (candidate: Candidate) =>
+        candidate.statusGroups.map((sg) => <StatusGroupDisplay key={sg.id} statusGroup={sg} />),
     },
+    // {
+    //   title: "Fakultät",
+    //   dataIndex: "faculty",
+    //   sorter: (a, b) => a.faculty.localeCompare(b.faculty),
+    // },
+    // {
+    //   title: "Studiengang",
+    //   dataIndex: "courseOfStudy",
+    //   sorter: (a, b) => a.course.localeCompare(b.course),
+    // },
     {
-      title: "Fakultät",
-      dataIndex: "faculty",
-      sorter: (a, b) => a.faculty.localeCompare(b.faculty),
-    },
-    {
-      title: "Studiengang",
-      dataIndex: "courseOfStudy",
-      sorter: (a, b) => a.course.localeCompare(b.course),
-    },
-    {
-      title: "Matrikel/Personalnummer",
-      dataIndex: "id",
-      sorter: (a, b) => a.id.localeCompare(b.id),
+      title: "Matrikelnummer",
+      dataIndex: "matriculationNumber",
+      sorter: (a, b) => (a.matriculationNumber ?? "").localeCompare(b.matriculationNumber ?? ""),
     },
   ]
 

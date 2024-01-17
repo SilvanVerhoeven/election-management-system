@@ -13,7 +13,7 @@ import {
   ParsedSiteData,
   ParsedStatusGroupData,
   parseBasisExcel,
-} from "src/core/lib/excel/basis"
+} from "src/core/lib/parse/basis"
 import createPollingStation from "./createPollingStation"
 import findSite from "../queries/findSite"
 import findPollingStation from "../queries/findPollingStation"

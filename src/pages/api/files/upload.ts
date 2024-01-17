@@ -31,14 +31,6 @@ SuperJson.allowErrorProps("statusCode")
 SuperJson.allowErrorProps("upload")
 
 /**
- * Errors thrown within the parser's functions are not catched by the `.catch()` in `handler` and would lead to a server crash.
- * That's why we use the `parserError` object to pass error information to the `handler`.
- * The `parserError` is preceeded by the errors thrown from the stream promise below:
- *   If the parser and the promise below throw errors, only the one from the promise below will be returned to the user.
- */
-let parserError: Error | null = null
-
-/**
  * Handle the request to upload one new file.
  * May only be used within an API handler.
  * Incoming request must be a POST request.
@@ -66,9 +58,17 @@ export const handleFileUpload = async (
 ) => {
   if (req.method !== "POST") throw new UploadError(403, "This must be a POST request")
 
+  /**
+   * Errors thrown within the parser's functions are not catched by the `.catch()` in `handler` and would lead to a server crash.
+   * That's why we use the `parserError` object to pass error information to the parser's outside context.
+   */
+  let parserError: Error | null = null
+
   let type: UploadType = UploadType.DATA
   let key: string | undefined = undefined
   let upload: Upload | null = null
+
+  const cleanup = async (uploadId: number) => await deleteUpload(uploadId, ctx)
 
   const formDataParser = busboy({ headers: req.headers })
 
@@ -107,7 +107,7 @@ export const handleFileUpload = async (
       } else {
         parserError = new UploadError(500, `Error when processing file: ${error}`)
       }
-      filestream.resume() // Make sure to empty the incoming file stream, otherwise the request will hang up
+      filestream.destroy()
     }
   })
 
@@ -115,14 +115,22 @@ export const handleFileUpload = async (
    * All errors thrown here are catched by the `.catch()` in `handler`.
    * They preceed `outputError`.
    */
-  await stream.pipeline(req, formDataParser).catch((error) => {
+  try {
+    await stream.pipeline(req, formDataParser)
+  } catch (error) {
+    if (!!(upload as unknown as Upload | null)) await cleanup(upload!.id)
     throw {
       statusCode: 500,
       ...error,
       message: "Error when parsing request: " + error.message,
       upload,
     }
-  })
+  }
+
+  if (parserError) {
+    if (!!(upload as unknown as Upload | null)) await cleanup(upload!.id)
+    throw parserError
+  }
 
   if (!upload && !parserError) throw new UploadError(400, "File missing in request")
 
@@ -130,26 +138,10 @@ export const handleFileUpload = async (
 }
 
 const handler = api(async (req, res, ctx) => {
-  parserError = null
-
   try {
     const upload = await handleFileUpload(req, res, ctx)
-
-    if (parserError) throw parserError // If we have an output error, we want to throw it here to catch it below
-
-    try {
-      if (upload.type == UploadType.DATA) await importElection(upload.id, ctx)
-    } catch (error) {
-      throw {
-        statusCode: 400,
-        ...error,
-        message: "DB import failed: " + error.message,
-      }
-    }
-
     res.status(200).json(upload)
   } catch (error) {
-    if (error.upload) await deleteUpload(error.upload.id, ctx)
     res.status(error.statusCode ?? 500).end(error.message)
   }
 })

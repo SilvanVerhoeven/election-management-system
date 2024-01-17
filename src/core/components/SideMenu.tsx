@@ -4,6 +4,7 @@ import {
   OrderedListOutlined,
   ContainerOutlined,
   FileExcelOutlined,
+  TeamOutlined,
 } from "@ant-design/icons"
 import type { MenuProps } from "antd"
 import { Layout, Menu } from "antd"
@@ -32,6 +33,7 @@ const getItem = (
 
 const items: MenuItem[] = [
   getItem(Routes.HomePage().href, "Basisdaten", "basis", <ContainerOutlined />),
+  getItem(Routes.CandidaturesPage().href, "Kandidaturen", "candidatures", <TeamOutlined />),
   getItem(Routes.BallotPage().href, "Stimmzettel", "ballots", <FileExcelOutlined />),
   getItem(Routes.CountPage().href, "Ergebnis", "results", <OrderedListOutlined />),
   getItem(null, "Konfiguration", "config", <SettingOutlined />, [

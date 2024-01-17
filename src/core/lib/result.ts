@@ -6,7 +6,7 @@ import {
   _EvaluatedList,
 } from "./candidates"
 import { CandidateListOrderType, PersonType, Upload } from "src/types"
-import { formatList } from "./excel"
+import { formatList } from "./parse"
 import { generateWordDocument } from "../word"
 
 const formatCandidate = (candidate: _Candidate | null) => {

@@ -6,7 +6,7 @@ import {
   Constituency as DbConstituency,
   Election as DbElection,
   ElectionSet as DbElectionSet,
-  Candidate as DbCandidate,
+  Person as DbPerson,
   PollingStation as DbPollingStation,
   StatusGroup as DbStatusGroup,
   Subject as DbSubject,
@@ -49,6 +49,12 @@ export enum UploadType {
   DATA = "data",
 }
 
+export enum CandidateStatusType {
+  ELECTABLE = "electable",
+  REJECTED = "rejected",
+}
+
+export type CandidateStatus = CandidateStatusType | string | null
 
 export type Version = DbVersion
 
@@ -66,20 +72,18 @@ export type Data = DbUpload & {
   key?: string
 }
 
-type CandidateBase = DbCandidate & {
-  status: CandidateStatusType | string
+type CandidateBase = DbPerson & {
+  status: CandidateStatus
   statusGroups: StatusGroup[]
 }
 
 export type Student = CandidateBase & {
-  type: PersonType.STUDENT
   matriculationNumber: string | null
   subject: Subject | null
   explicitelyVoteAt: Faculty | null
 }
 
 export type Employee = CandidateBase & {
-  type: PersonType.EMPLOYEE
   worksAt: Department | null
 }
 

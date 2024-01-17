@@ -6,6 +6,9 @@ export interface StatusGroupDisplayProps extends TextProps {
   statusGroup: StatusGroup
 }
 
+export const getDisplayText = (statusGroup: StatusGroup) =>
+  statusGroup.shortName ?? statusGroup.name
+
 const StatusGroupDisplay = ({ statusGroup, ...textProps }: StatusGroupDisplayProps) => {
   return (
     <AbbreveationDisplay

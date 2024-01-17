@@ -1,4 +1,4 @@
-import { generateWorkbook } from "src/core/lib/excel/basis"
+import { generateWorkbook } from "src/core/lib/parse/basis"
 import mime from "mime"
 import { api } from "src/blitz-server"
 

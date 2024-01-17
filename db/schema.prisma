@@ -67,9 +67,8 @@ model Token {
 
 // -----------------------------------------------------
 
-model Candidate {
+model Person {
   globalId               Int
-  type                   String // ENUM: student/employee
   firstName              String
   lastName               String
   email                  String?
@@ -102,7 +101,7 @@ model Subject {
   versionId   Int
 
   // REFERENCED BY
-  // Candidate
+  // Person
 
   @@id([globalId, versionId])
 }
@@ -151,7 +150,7 @@ model Unit {
 
   // REFERENCED BY
   // Subject
-  // Candidate
+  // Person
 
   @@id([globalId, versionId])
 }
@@ -189,7 +188,7 @@ model VotingResult {
   globalId      Int
   numberOfVotes Int
   electionId    Int // Election globalId
-  candidateId   Int // Candidate globalId
+  personId      Int // Person globalId
   version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
 
@@ -214,21 +213,21 @@ model CandidateList {
 }
 
 model CandidateListPosition {
-  candidateId Int // Candidate globalId
-  listId      Int // CandidateList globalId
-  position    Int? // 0-indexed Position of candidate on candidate list, may be undefined for alphabetical lists
+  personId Int // Person globalId
+  listId   Int // CandidateList globalId
+  position Int? // 0-indexed Position of person on candidate list, may be undefined for alphabetical lists
 
-  @@id([candidateId, listId])
+  @@id([personId, listId])
 }
 
 model StatusGroupMembership {
-  candidateId   Int // Candidate globalId
+  personId      Int // Person globalId
   statusGroupId Int // StatusGroup globalId
   deleted       Boolean @default(false)
   version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
 
-  @@id([candidateId, statusGroupId, versionId])
+  @@id([personId, statusGroupId, deleted])
 }
 
 model StatusGroupEligibility {
@@ -238,7 +237,7 @@ model StatusGroupEligibility {
   version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
 
-  @@id([electionId, statusGroupId, versionId])
+  @@id([electionId, statusGroupId, deleted])
 }
 
 model ConstituencyEligibility {
@@ -248,7 +247,7 @@ model ConstituencyEligibility {
   version        Version @relation(fields: [versionId], references: [id])
   versionId      Int
 
-  @@id([electionId, constituencyId, versionId])
+  @@id([electionId, constituencyId, deleted])
 }
 
 model Election {
@@ -303,7 +302,7 @@ model Version {
   Election                Election[]
   CandidateList           CandidateList[]
   VotingResult            VotingResult[]
-  Candidate               Candidate[]
+  Person                  Person[]
   Subject                 Subject[]
   Site                    Site[]
   Constituency            Constituency[]

@@ -9,6 +9,9 @@ import { templateType } from "src/types"
 import { parseCandidatesExcel } from "src/core/lib/candidates"
 import getElectionResult from "src/core/queries/getElectionResult"
 
+/**
+ * Returns the election result for the given upload.
+ */
 export default api(async (req, res, ctx) => {
   if (req.method !== "GET") {
     res.status(405).send({ error: "Method not allowed" })

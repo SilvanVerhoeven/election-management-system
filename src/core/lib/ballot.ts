@@ -1,6 +1,6 @@
 import { _ElectionData, _CandidateList } from "./candidates"
 import { Upload } from "src/types"
-import { formatList } from "./excel"
+import { formatList } from "./parse"
 import { generateWordDocument } from "../word"
 
 /**

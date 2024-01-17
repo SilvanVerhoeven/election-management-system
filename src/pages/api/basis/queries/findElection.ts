@@ -3,6 +3,7 @@ import { Ctx } from "blitz"
 import db, { Election as DbElection } from "db"
 import getStatusGroupsForElection from "./getStatusGroupsForElection"
 import getConstituenciesForElection from "./getConstituenciesForElection"
+import { haveEqualValues } from "src/core/lib/array"
 
 export interface FindElectionProps {
   committeeId: number
@@ -10,9 +11,6 @@ export interface FindElectionProps {
   eligibleStatusGroupIds: number[]
   eligibleConstituencyIds: number[]
 }
-
-const haveEqualValues = (a: number[], b: number[]) =>
-  a.concat().sort().join(",") == b.concat().sort().join(",")
 
 /**
  * Finds election with the given data.

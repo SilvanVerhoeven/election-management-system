@@ -97,7 +97,7 @@ const BallotPage: BlitzPage = () => {
     <>
       {contextHolder}
       <Title style={{ marginTop: 0 }}>Stimmzettel erstellen</Title>
-      <Form name="count-result" onFinish={onDownload} onFinishFailed={onDownloadFailed}>
+      <Form name="ballot-result" onFinish={onDownload} onFinishFailed={onDownloadFailed}>
         <Form.Item>
           <Dragger
             multiple={false}

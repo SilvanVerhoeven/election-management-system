@@ -149,18 +149,16 @@ const importElections = async (
       constituencies.push(await findConstituency({ nameOrShortName }, ctx))
     }
 
-    JSON.stringify(
-      await createElection(
-        {
-          committeeId: committee.globalId,
-          eligibleStatusGroupIds: Array.from(new Set(statusGroups.map((sg) => sg.globalId))),
-          eligibleConstituencyIds: Array.from(new Set(constituencies.map((c) => c.globalId))),
-          numberOfSeats: election.numberOfSeats,
-          runsAtId,
-          versionId,
-        },
-        ctx
-      )
+    await createElection(
+      {
+        committeeId: committee.globalId,
+        eligibleStatusGroupIds: Array.from(new Set(statusGroups.map((sg) => sg.globalId))),
+        eligibleConstituencyIds: Array.from(new Set(constituencies.map((c) => c.globalId))),
+        numberOfSeats: election.numberOfSeats,
+        runsAtId,
+        versionId,
+      },
+      ctx
     )
   }
 }

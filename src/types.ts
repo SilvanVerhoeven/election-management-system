@@ -13,6 +13,7 @@ import {
   Unit as DbUnit,
   VotingResult as DbVotingResult,
   Upload as DbUpload,
+  Version as DbVersion,
 } from "db"
 
 export const templateType = {

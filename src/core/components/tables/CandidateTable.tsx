@@ -22,7 +22,9 @@ const CandidateTable = ({ data }: { data: Candidate[] }) => {
     {
       title: "Statusgruppe",
       render: (candidate: Candidate) =>
-        candidate.statusGroups.map((sg) => <StatusGroupDisplay key={sg.id} statusGroup={sg} />),
+        candidate.statusGroups.map((sg) => (
+          <StatusGroupDisplay key={sg.globalId} statusGroup={sg} />
+        )),
     },
     // {
     //   title: "Fakultät",

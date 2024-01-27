@@ -34,6 +34,15 @@ import getCandidateLists from "./api/basis/queries/getCandidateLists"
 
 const { Title, Text } = Typography
 
+interface NewListFormProps {
+  listName: string
+  listShortName?: string
+  order: CandidateListOrderType
+  submittedOn: Date
+  candidatesForId: { label: string; value: number }
+  candidateIds: { label: string; value: number }[]
+}
+
 const CandidaturesPage: BlitzPage = () => {
   const {
     isUploading,
@@ -84,7 +93,26 @@ const CandidaturesPage: BlitzPage = () => {
       }
     )
 
+  const [initialLists, { refetch: refetchLists }] = useQuery(getCandidateLists, null, {
+    refetchOnWindowFocus: false,
+  })
+  const [lists, setLists] = useState<CandidateList[] | null>()
+
+  const updateLists = useCallback(async () => {
+    setLists((await refetchLists()).data)
+  }, [refetchLists])
+
+  useEffect(() => {
+    if (!!lists) return
+    setLists(initialLists)
+  }, [lists, setLists, initialLists])
+
   const items: TabsProps["items"] = [
+    {
+      key: "lists",
+      label: "Listen",
+      children: <CandidateListTable data={lists ?? []} />,
+    },
     {
       key: "candidates",
       label: "Kandidierende",
@@ -97,11 +125,114 @@ const CandidaturesPage: BlitzPage = () => {
     },
   ]
 
+  const [form] = Form.useForm()
+
+  const [createVersionMutation] = useMutation(createVersion)
+  const [createCandidateListMutation] = useMutation(createCandidateList)
+  const [createCandidaciesMutation] = useMutation(createCandidacies)
+
+  const upsertList = async (values: NewListFormProps) => {
+    try {
+      setIsUpsertingList(true)
+      const version = await createVersionMutation({})
+      const list = await createCandidateListMutation({
+        name: values.listName,
+        shortName: values.listShortName,
+        order: values.order,
+        submittedOn: values.submittedOn,
+        candidatesForId: values.candidatesForId.value,
+        versionId: version.id,
+      })
+      await createCandidaciesMutation({
+        listId: list.globalId,
+        candidateIds: values.candidateIds.map((ci) => ci.value),
+        order:
+          list.order == CandidateListOrderType.ALPHABETICALLY
+            ? CandidateListOrderType.ALPHABETICALLY
+            : CandidateListOrderType.NUMERIC,
+      })
+      closeListModal()
+      form.resetFields()
+      void messageApi.success("Liste gespeichert")
+    } catch (error) {
+      console.error(error)
+      void messageApi.error(
+        <>
+          <Text strong>Speicherung fehlgeschlagen</Text>
+          <br />
+          <Text>{`${error}`}</Text>
+        </>,
+        10
+      )
+    } finally {
+      setIsUpsertingList(false)
+    }
+    await updateLists()
+  }
+
+  const [showListModal, setShowListModal] = useState(false)
+  const [isUpsertingList, setIsUpsertingList] = useState(false)
+
+  const openListModal = () => {
+    setShowListModal(true)
+  }
+  const closeListModal = () => {
+    setShowListModal(false)
+  }
+
+  const [latestElectionSet] = useQuery(getLatestElectionSet, null)
+  const [elections, { refetch: refetchElections }] = useQuery(
+    getElectionsInSet,
+    latestElectionSet?.globalId ?? 0
+  )
+
+  const filterElection = (input: string, option?: { label: string; value: number }) => {
+    if (!option) return false
+    const lowerCaseInput = input.toLowerCase()
+    const election = elections.filter((election) => election.globalId == option.value)[0]
+    if (!election) return false
+    return (
+      election.globalId.toString().includes(lowerCaseInput) ||
+      election.committee.name.toLowerCase().includes(lowerCaseInput) ||
+      election.committee.shortName?.toLowerCase().includes(lowerCaseInput) ||
+      election.committee.globalId.toString().includes(lowerCaseInput) ||
+      election.constituencies.some(
+        (c) =>
+          c.name.toLowerCase().includes(lowerCaseInput) ||
+          c.shortName?.toLowerCase().includes(lowerCaseInput)
+      ) ||
+      election.statusGroups.some(
+        (sg) =>
+          sg.name.toLowerCase().includes(lowerCaseInput) ||
+          sg.shortName?.toLowerCase().includes(lowerCaseInput)
+      )
+    )
+  }
+
+  useEffect(() => {
+    if (!latestElectionSet) return
+    void refetchElections()
+  }, [latestElectionSet, refetchElections])
+
+  const filterCandidate = (input: string, option?: { label: string; value: number }) => {
+    if (!option) return false
+    const lowerCaseInput = input.toLowerCase()
+    const person = (persons ?? []).filter((person) => person.globalId == option.value)[0]
+    if (!person) return false
+    return (
+      fullName(person).toLowerCase().includes(lowerCaseInput) ||
+      !!person.matriculationNumber?.toLowerCase().includes(lowerCaseInput)
+    )
+  }
+
   return (
     <>
       {contextHolder}
       <Title style={{ marginTop: 0 }}>Kandidaturen</Title>
       <Space wrap>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openListModal}>
+          Neue Liste
+        </Button>
         <UploadComponent
           action="/api/import/persons"
           maxCount={1}
@@ -116,6 +247,84 @@ const CandidaturesPage: BlitzPage = () => {
         </UploadComponent>
       </Space>
       <Tabs defaultActiveKey="1" items={items} />
+      <Modal
+        title="Neue Liste anlegen"
+        open={showListModal}
+        onCancel={closeListModal}
+        footer={[
+          <Button key="cancel" onClick={closeListModal}>
+            Abbrechen
+          </Button>,
+          <Button
+            form="upsertList"
+            key="submit"
+            htmlType="submit"
+            type="primary"
+            loading={isUpsertingList}
+          >
+            Liste anlegen
+          </Button>,
+        ]}
+      >
+        <Form form={form} name="upsertList" onFinish={upsertList}>
+          <Form.Item name="listName" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="listShortName" label="Kürzel">
+            <Input />
+          </Form.Item>
+          <Form.Item name="order" label="Reihenfolge" rules={[{ required: true }]}>
+            <Radio.Group name="order" buttonStyle="solid">
+              <Radio.Button value={CandidateListOrderType.NUMERIC}>Numerisch</Radio.Button>
+              <Radio.Button value={CandidateListOrderType.ALPHABETICALLY}>
+                Alphabetisch
+              </Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+          <Form.Item name="submittedOn" label="Eingereicht am" rules={[{ required: true }]}>
+            <DatePicker onChange={() => {}} />
+          </Form.Item>
+          <Form.Item name="candidatesForId" label="Kandidiert für" rules={[{ required: true }]}>
+            <Select
+              showSearch
+              labelInValue
+              placeholder="Gremium, Status-Gruppe oder Wahlkreis eingeben"
+              filterOption={filterElection}
+              options={elections.map((election) => {
+                return {
+                  value: election.globalId,
+                  label: `#${election.globalId}: ${
+                    election.committee.shortName ?? election.committee.name
+                  } - ${election.constituencies
+                    .map((c) => c.shortName ?? c.name)
+                    .join(", ")} - ${election.statusGroups
+                    .map((sg) => sg.shortName ?? sg.name)
+                    .join(", ")} (${election.numberOfSeats} ${
+                    election.numberOfSeats == 1 ? "Sitz" : "Sitze"
+                  })`,
+                }
+              })}
+            />
+          </Form.Item>
+          <Form.Item name="candidateIds" label="Kandidierende" rules={[{ required: true }]}>
+            <Select
+              showSearch
+              labelInValue
+              mode="multiple"
+              placeholder="Namen oder Matrikelnummer eingeben"
+              filterOption={filterCandidate}
+              options={(persons ?? []).map((person) => {
+                return {
+                  value: person.globalId,
+                  label: `${fullName(person)} (${
+                    person.matriculationNumber ? person.matriculationNumber : "Mitarbeiter:in"
+                  })`,
+                }
+              })}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </>
   )
 }

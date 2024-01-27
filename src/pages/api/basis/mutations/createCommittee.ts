@@ -9,9 +9,9 @@ export interface CommitteeProps {
 }
 
 /**
- * Creates a new polling station, unless it matches another polling station completely.
+ * Creates a new committee, unless it matches another committee completely.
  *
- * @returns Newly created or matching constituency in the bare DB form
+ * @returns Newly created or matching committee in the bare DB form
  */
 export default resolver.pipe(
   async ({ name, shortName, versionId }: CommitteeProps, ctx: Ctx): Promise<DbCommittee> => {

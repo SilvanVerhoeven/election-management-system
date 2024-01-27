@@ -124,6 +124,7 @@ export type VotingResult = DbVotingResult & {
 export type CandidateList = DbCandidateList & {
   order: CandidateListOrderType
   candidates: Candidate[]
+  candidatesFor: Election
 }
 
 export type CandidateListPosition = DbCandidateListPosition

@@ -1,6 +1,18 @@
-import React, { useState } from "react"
-import { UploadOutlined } from "@ant-design/icons"
-import { Upload as UploadComponent, Typography, Button, Space, Tabs } from "antd"
+import React, { useCallback, useEffect, useState } from "react"
+import { UploadOutlined, PlusOutlined } from "@ant-design/icons"
+import {
+  Upload as UploadComponent,
+  Typography,
+  Button,
+  Space,
+  Tabs,
+  Modal,
+  Form,
+  Input,
+  Radio,
+  DatePicker,
+  Select,
+} from "antd"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
 import { TabsProps, UploadFile } from "antd/lib"
@@ -8,6 +20,17 @@ import CandidateListTable from "src/core/components/tables/CandidateListTable"
 import CandidateTable from "src/core/components/tables/CandidateTable"
 import useUpload from "src/core/hooks/useUpload"
 import { UploadChangeParam } from "antd/es/upload"
+import PersonTable from "src/core/components/tables/PersonTable"
+import { useMutation, useQuery } from "@blitzjs/rpc"
+import getPersons from "./api/basis/queries/getPersons"
+import { Candidate, CandidateList, CandidateListOrderType } from "src/types"
+import getElectionsInSet from "./api/basis/queries/getElectionsInSet"
+import getLatestElectionSet from "./api/basis/queries/getLatestElectionSet"
+import { fullName } from "src/core/lib/person"
+import createCandidateList from "./api/basis/mutations/createCandidateList"
+import createVersion from "./api/basis/mutations/createVersion"
+import createCandidacies from "./api/basis/mutations/createCandidacies"
+import getCandidateLists from "./api/basis/queries/getCandidateLists"
 
 const { Title, Text } = Typography
 
@@ -20,13 +43,32 @@ const CandidaturesPage: BlitzPage = () => {
     contextHolder,
   } = useUpload()
 
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [isUpdatingPersons, setIsUpdatingPersons] = useState(false)
+
+  const [initialPersons, { refetch: refetchPersons }] = useQuery(getPersons, null, {
+    refetchOnWindowFocus: false,
+  })
+  const [persons, setPersons] = useState<Candidate[] | null>()
+
+  const updatePersons = useCallback(async () => {
+    setIsUpdatingPersons(true)
+    try {
+      setPersons((await refetchPersons()).data)
+    } finally {
+      setIsUpdatingPersons(false)
+    }
+  }, [refetchPersons])
+
+  useEffect(() => {
+    if (!!persons) return
+    setPersons(initialPersons)
+  }, [persons, setPersons, initialPersons])
 
   const handleFileChange = async (change: UploadChangeParam<UploadFile>) =>
     _handleFileChange(
       change,
       async () => {
-        //await updateDisplay()
+        await updatePersons()
         void messageApi.success(`Upload erfolgreich`)
       },
       async (_, error) => {
@@ -49,9 +91,9 @@ const CandidaturesPage: BlitzPage = () => {
       children: <CandidateTable data={[]} />,
     },
     {
-      key: "lists",
-      label: "Listen",
-      children: <CandidateListTable data={[]} />,
+      key: "persons",
+      label: "Personen",
+      children: <PersonTable data={persons ?? []} />,
     },
   ]
 
@@ -68,8 +110,8 @@ const CandidaturesPage: BlitzPage = () => {
           customRequest={(options) => uploadFile(options, "persons")}
           accept=".csv"
         >
-          <Button icon={<UploadOutlined />} loading={isUploading || isUpdating}>
-            Importieren
+          <Button icon={<UploadOutlined />} loading={isUploading || isUpdatingPersons}>
+            Personen importieren
           </Button>
         </UploadComponent>
       </Space>

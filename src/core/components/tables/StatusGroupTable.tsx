@@ -26,7 +26,13 @@ const StatusGroupTable = ({ data }: { data: StatusGroup[] }) => {
   ]
 
   return (
-    <Table columns={columns} dataSource={data} rowKey="id" pagination={false} scroll={{ y: 500 }} />
+    <Table
+      columns={columns}
+      dataSource={data}
+      rowKey="globalId"
+      pagination={false}
+      scroll={{ y: 500 }}
+    />
   )
 }
 

@@ -6,6 +6,9 @@ export interface PollingStationDisplayProps extends TextProps {
   pollingStation: PollingStation
 }
 
+export const getDisplayText = (pollingStation: PollingStation) =>
+  pollingStation.shortName ?? pollingStation.name
+
 const PollingStationDisplay = ({ pollingStation, ...textProps }: PollingStationDisplayProps) => {
   return (
     <AbbreveationDisplay

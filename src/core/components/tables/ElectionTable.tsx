@@ -22,7 +22,7 @@ const ElectionTable = ({ data }: { data: Election[] }) => {
       render: (statusGroups: StatusGroup[]) => (
         <>
           {statusGroups.map((statusGroup) => (
-            <Tag key={statusGroup.id}>
+            <Tag key={statusGroup.globalId}>
               <StatusGroupDisplay statusGroup={statusGroup} style={{ fontSize: "inherit" }} />
             </Tag>
           ))}
@@ -35,7 +35,7 @@ const ElectionTable = ({ data }: { data: Election[] }) => {
       render: (constituencies: Constituency[]) => (
         <>
           {constituencies.map((constituency) => (
-            <Tag key={constituency.id}>
+            <Tag key={constituency.globalId}>
               <ConstituencyDisplay constituency={constituency} style={{ fontSize: "inherit" }} />
             </Tag>
           ))}

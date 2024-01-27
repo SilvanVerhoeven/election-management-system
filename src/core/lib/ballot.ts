@@ -28,11 +28,10 @@ const structureLists = (lists: _CandidateList[]) => {
     }
     const maxLength = Math.max(...parallelLists.map((list) => list.candidates.length))
     for (let j = 0; j < maxLength; j++) {
-      const parallelCandidates = {
-        index: j + 1,
-      }
+      const parallelCandidates = {}
       for (let offset = 0; offset < parallelLists.length; offset++) {
         if (!parallelLists[offset] || !parallelLists[offset]?.candidates[j]) continue
+        parallelCandidates[`index${offset + 1}`] = j + 1
         const candidate = parallelLists[offset]?.candidates[j]!
         parallelCandidates[offset + 1] = {
           firstName: candidate.firstName,

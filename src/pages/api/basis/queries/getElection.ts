@@ -30,7 +30,7 @@ export default resolver.pipe(
 
     return {
       ...dbElection,
-      committee: await getCommittee({ globalId: dbElection.globalId }, ctx),
+      committee: await getCommittee({ globalId: dbElection.committeeId }, ctx),
       constituencies: await getConstituenciesForElection(dbElection.globalId, ctx),
       statusGroups: await getStatusGroupsForElection(dbElection.globalId, ctx),
     }

@@ -10,11 +10,13 @@ export interface ElectionDisplayProps extends TextProps {
 }
 
 const getText = (election: Election) =>
-  `${election.committee.name} - ${election.constituencies[0]?.name} - ${election.statusGroups[0]?.name}`
+  `${election.committee.name} - ${election.constituencies
+    .map((c) => c.name)
+    .join(", ")} - ${election.statusGroups.map((sg) => sg.name).join(", ")}`
 const getAbbreveation = (election: Election) =>
-  `${getCommitteeDisplayText(election.committee)} - ${
-    election.constituencies[0] ? getConstituencyDisplayText(election.constituencies[0]) : "/"
-  } - ${election.statusGroups[0] ? getStatusGroupDisplayText(election.statusGroups[0]) : "/"}`
+  `${getCommitteeDisplayText(election.committee)} - ${election.constituencies
+    .map((c) => getConstituencyDisplayText(c))
+    .join(", ")} - ${election.statusGroups.map((sg) => getStatusGroupDisplayText(sg)).join(", ")}`
 
 export const getDisplayText = getAbbreveation
 

@@ -7,3 +7,18 @@
  */
 export const haveEqualValues = <T>(a: T[], b: T[]) =>
   a.concat().sort().join(",") == b.concat().sort().join(",")
+
+/**
+ * Helper for `Array.filter` that allows to filter out all unique values of the filtered array.
+ *
+ * Usage example:
+ * ```
+ * const array = [1, 2, 3, 3]
+ * const uniqueValues = array.filter(disctinct)
+ * ```
+ *
+ * @returns Whether the currently looked at value is the first of its kind in the array.
+ */
+export const distinct = <T>(value: T, index: number, self: T[]): boolean => {
+  return self.indexOf(value) === index
+}

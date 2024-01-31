@@ -3,7 +3,7 @@ import { Ctx } from "blitz"
 import db from "db"
 import { Faculty, UnitType } from "src/types"
 
-export interface GetSubjectProps {
+export interface GetFacultyProps {
   globalId: number
   versionId?: number
 }
@@ -16,7 +16,7 @@ export interface GetSubjectProps {
  * @returns Faculty of the given version
  */
 export default resolver.pipe(
-  async ({ globalId, versionId }: GetSubjectProps, ctx: Ctx): Promise<Faculty> => {
+  async ({ globalId, versionId }: GetFacultyProps, ctx: Ctx): Promise<Faculty> => {
     const faculty = await db.unit.findFirstOrThrow({
       where: {
         type: UnitType.FACULTY,

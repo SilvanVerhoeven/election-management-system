@@ -89,7 +89,7 @@ const CountPage: BlitzPage = () => {
   }
 
   const onDownloadFailed = async (errorInfo: any) => {
-    await messageApi.error(errorInfo)
+    await messageApi.error(errorInfo.toString())
     setIsGeneratingResults(false)
   }
 

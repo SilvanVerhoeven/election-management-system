@@ -17,6 +17,7 @@ import {
 } from "db"
 
 export const templateType = {
+  Proposal: "proposal",
   Ballot: "ballot",
   Results: "results",
   Config: "config",

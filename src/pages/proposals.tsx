@@ -5,20 +5,20 @@ import { saveBlob } from "src/core/lib/files"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
 import { getAntiCSRFToken } from "@blitzjs/auth"
-import { useQuery } from "@blitzjs/rpc"
-import getElections from "./api/basis/queries/getElections"
 import ElectionDocumentGenerationTable, {
   GenerationListEntry,
 } from "src/core/components/tables/ElectionDocumentGenerationTable"
+import { useQuery } from "@blitzjs/rpc"
+import getElections from "./api/basis/queries/getElections"
 
 const { Title } = Typography
 
-const BallotPage: BlitzPage = () => {
+const ProposalPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
 
   const [elections] = useQuery(getElections, null)
 
-  const [isDownloadingAllBallots, setIsDownloadingAllBallots] = useState(false)
+  const [isDownloadingAllProposals, setIsDownloadingAllProposals] = useState(false)
   const [data, setData] = useState<GenerationListEntry[]>([])
 
   useEffect(() => {
@@ -39,22 +39,23 @@ const BallotPage: BlitzPage = () => {
       data.map((entry) => {
         return {
           ...entry,
-          disabled: isDownloadingAllBallots,
+          disabled: isDownloadingAllProposals,
         }
       })
     )
-  }, [isDownloadingAllBallots])
+  }, [isDownloadingAllProposals])
 
-  const downloadAllBallots = async () => {
-    setIsDownloadingAllBallots(true)
+  const downloadAllProposals = async () => {
+    setIsDownloadingAllProposals(true)
     await onDownload()
-    setIsDownloadingAllBallots(false)
+    setIsDownloadingAllProposals(false)
   }
 
   const onDownload = async (electionId?: number) => {
+    console.log(electionId)
     try {
       const response = await fetch(
-        electionId ? `/api/ballots/${electionId}` : `/api/ballots/download`,
+        electionId ? `/api/proposals/${electionId}` : `/api/proposals/download`,
         {
           headers: {
             "anti-csrf": getAntiCSRFToken(),
@@ -78,16 +79,16 @@ const BallotPage: BlitzPage = () => {
   return (
     <>
       {contextHolder}
-      <Title style={{ marginTop: 0 }}>Stimmzettel erstellen</Title>
+      <Title style={{ marginTop: 0 }}>Wahlvorschläge erstellen</Title>
       <Space direction="vertical">
         <Space wrap>
           <Button
             type="primary"
             icon={<DownloadOutlined />}
-            onClick={downloadAllBallots}
-            loading={isDownloadingAllBallots}
+            onClick={downloadAllProposals}
+            loading={isDownloadingAllProposals}
           >
-            Alle Stimmzettel herunterladen
+            Alle Wahlvorschläge herunterladen
           </Button>
         </Space>
         <ElectionDocumentGenerationTable data={data ?? []} />
@@ -96,6 +97,6 @@ const BallotPage: BlitzPage = () => {
   )
 }
 
-BallotPage.getLayout = (page) => <Layout title="Stimmzettel">{page}</Layout>
+ProposalPage.getLayout = (page) => <Layout title="Wahlvorschläge">{page}</Layout>
 
-export default BallotPage
+export default ProposalPage

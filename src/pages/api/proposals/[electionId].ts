@@ -7,21 +7,25 @@ import { Election, templateType } from "src/types"
 import { generateBallot } from "src/core/lib/ballot"
 import { Ctx } from "blitz"
 import { getElectionFileName } from "src/core/lib/files"
+import { generateProposal } from "src/core/lib/proposal"
+import getElectionSet from "../basis/queries/getElectionSet"
 
-export const getBallotFileName = (election: Election) => {
-  return `stimmzettel-${getElectionFileName(election)}`
+export const getProposalFileName = (election: Election) => {
+  return `wahlvorschläge-${getElectionFileName(election)}`
 }
 
-export const getBallotFileType = () => "docx"
+export const getProposalFileType = () => "docx"
 
-export const downloadBallot = async (election: Election, ctx: Ctx) => {
+export const downloadProposal = async (election: Election, ctx: Ctx) => {
   const lists = await getCandidateLists(election.globalId, ctx)
+  const electionSet = await getElectionSet({ globalId: election.runsAtId }, ctx)
 
-  const template = await getTemplate(templateType.Ballot, ctx)
-  if (!template) throw new Error("No ballot template set")
+  const template = await getTemplate(templateType.Proposal, ctx)
+  if (!template) throw new Error("No proposal template set")
 
-  return await generateBallot(
+  return await generateProposal(
     {
+      electionSet,
       election,
       lists,
     },
@@ -44,11 +48,11 @@ export default api(async (req, res, ctx) => {
 
   try {
     const election = await getElection({ globalId: parseInt(electionId) }, ctx)
-    const wordBuffer = await downloadBallot(election, ctx)
+    const wordBuffer = await downloadProposal(election, ctx)
 
     res
-      .setHeader("content-type", `${mime.getType(getBallotFileType()) || ""}; charset=utf-8`)
-      .setHeader("content-disposition", `attachment; filename="${getBallotFileName(election)}"`)
+      .setHeader("content-type", `${mime.getType(getProposalFileType()) || ""}; charset=utf-8`)
+      .setHeader("content-disposition", `attachment; filename="${getProposalFileName(election)}"`)
       .setHeader("content-length", `${wordBuffer.byteLength}`)
       .send(wordBuffer)
   } catch (error) {

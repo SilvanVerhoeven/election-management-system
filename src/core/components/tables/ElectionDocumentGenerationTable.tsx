@@ -7,13 +7,13 @@ import StatusGroupDisplay, {
 } from "../displays/StatusGroupDisplay"
 import ConstituencyDisplay, { getDisplayText } from "../displays/ConstituencyDisplay"
 
-export type BallotGenerationListEntry = {
+export type GenerationListEntry = {
   election: Election
   disabled: boolean
   onDownload: (event: MouseEvent<HTMLElement>, electionId: number) => void | Promise<void>
 }
 
-const BallotGenerationActions = ({ data }: { data: BallotGenerationListEntry }) => {
+const GenerationActions = ({ data }: { data: GenerationListEntry }) => {
   const [isDownloading, setIsDownloading] = useState(false)
 
   return (
@@ -36,8 +36,8 @@ const BallotGenerationActions = ({ data }: { data: BallotGenerationListEntry }) 
   )
 }
 
-const BallotGenerationTable = ({ data }: { data: BallotGenerationListEntry[] }) => {
-  const columns: ColumnsType<BallotGenerationListEntry> = [
+const GenerationTable = ({ data }: { data: GenerationListEntry[] }) => {
+  const columns: ColumnsType<GenerationListEntry> = [
     {
       title: "Gremium",
       dataIndex: ["election", "committee", "name"],
@@ -48,7 +48,7 @@ const BallotGenerationTable = ({ data }: { data: BallotGenerationListEntry[] }) 
     {
       title: "Wahlkreis",
       width: 150,
-      render: (data: BallotGenerationListEntry) =>
+      render: (data: GenerationListEntry) =>
         data.election.constituencies.map((c) => (
           <Tag key={c.globalId}>
             <ConstituencyDisplay constituency={c} />
@@ -63,7 +63,7 @@ const BallotGenerationTable = ({ data }: { data: BallotGenerationListEntry[] }) 
     {
       title: "Statusgruppe",
       width: 150,
-      render: (data: BallotGenerationListEntry) =>
+      render: (data: GenerationListEntry) =>
         data.election.statusGroups.map((sg) => (
           <Tag key={sg.globalId}>
             <StatusGroupDisplay statusGroup={sg} />
@@ -78,7 +78,7 @@ const BallotGenerationTable = ({ data }: { data: BallotGenerationListEntry[] }) 
           ),
     },
     {
-      render: (data: BallotGenerationListEntry) => <BallotGenerationActions data={data} />,
+      render: (data: GenerationListEntry) => <GenerationActions data={data} />,
     },
   ]
 
@@ -94,4 +94,4 @@ const BallotGenerationTable = ({ data }: { data: BallotGenerationListEntry[] }) 
   )
 }
 
-export default BallotGenerationTable
+export default GenerationTable

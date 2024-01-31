@@ -34,6 +34,7 @@ const TemplateConfigPage: BlitzPage = () => {
   }
 
   const labels = {
+    [templateType.Proposal]: "Wahlvorschlag",
     [templateType.Ballot]: "Stimmzettel",
     [templateType.Results]: "Wahlergebnis-Protokoll",
     [templateType.Config]: "Konfiguration",

@@ -23,4 +23,4 @@ export const fullName = (person: Candidate) => `${person.firstName} ${person.las
  * @returns Status group of person with highest (i.e. largest) priority. If the person has no status group, `undefined` is returned
  */
 export const activeStatusGroup = (person: Candidate): StatusGroup | undefined =>
-  person.statusGroups.toSorted((sg) => sg.priority)[-1]
+  person.statusGroups.concat().sort((a, b) => b.priority - a.priority)[0]

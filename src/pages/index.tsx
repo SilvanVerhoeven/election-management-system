@@ -133,7 +133,7 @@ const HomePage: BlitzPage = () => {
   }
 
   const downloadFailed = async (errorInfo: any) => {
-    await messageApi.error(errorInfo)
+    await messageApi.error(errorInfo.toString())
     setIsDownloadingExcel(false)
   }
 

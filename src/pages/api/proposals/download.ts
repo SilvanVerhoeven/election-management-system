@@ -1,8 +1,8 @@
 import mime from "mime"
 import { api } from "src/blitz-server"
 import getElections from "../basis/queries/getElections"
-import { downloadBallot, getBallotFileName, getBallotFileType } from "./[electionId]"
 import { zippify } from "src/core/lib/files"
+import { downloadProposal, getProposalFileName, getProposalFileType } from "./[electionId]"
 
 export default api(async (req, res, ctx) => {
   if (req.method !== "GET") {
@@ -11,21 +11,21 @@ export default api(async (req, res, ctx) => {
   }
 
   const elections = await getElections(null, ctx)
-  const ballots = await Promise.all(
-    elections.map(async (election) => await downloadBallot(election, ctx))
+  const proposals = await Promise.all(
+    elections.map(async (election) => await downloadProposal(election, ctx))
   )
 
   const zip = zippify(
     elections,
-    ballots,
-    (election) => `${getBallotFileName(election)}.${getBallotFileType()}`
+    proposals,
+    (election) => `${getProposalFileName(election)}.${getProposalFileType()}`
   )
 
   const now = new Date()
   const dateTimeString = `${now.getFullYear()}${now.getMonth()}${now.getDate()}${now.getHours()}${now.getMinutes()}${now.getSeconds()}`
 
   res
-    .setHeader("content-disposition", `attachment; filename="stimmzettel-${dateTimeString}.zip"`)
+    .setHeader("content-disposition", `attachment; filename="wahlvorschläge-${dateTimeString}.zip"`)
     .setHeader("content-type", mime.getType("zip") || "")
     .send(zip)
 })

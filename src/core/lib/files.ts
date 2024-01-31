@@ -1,5 +1,9 @@
 import path from "path"
-import { Upload } from "../../types"
+import { Election, Upload } from "../../types"
+import PizZip from "pizzip"
+import { getDisplayText as getCommitteeDisplayText } from "src/core/components/displays/CommitteeDisplay"
+import { getDisplayText as getStatusGroupDisplayText } from "src/core/components/displays/StatusGroupDisplay"
+import { getDisplayText as getConstituencyDisplayText } from "src/core/components/displays/ConstituencyDisplay"
 
 /**
  * Returns root directory of the server.
@@ -53,3 +57,41 @@ export const saveBlob = async (blob: Blob, contentDisposition?: string | null) =
     hiddenDownloadLink.remove()
   }, 100)
 }
+
+/**
+ * Return the given election-related files as a .zip.
+ *
+ * @param elections Elections the files are related to.
+ * @param files Files related to the elections. The first file is related to the first election. Elections and Files must have equal length.
+ * @param getFullFileName Function to generate the the file's filename, including extension
+ * @returns ZIP file as a buffer containing all files
+ */
+export const zippify = (
+  elections: Election[],
+  files: Buffer[],
+  getFullFileName: (election: Election) => string
+): Buffer => {
+  const zip = new PizZip()
+
+  for (let i = 0; i < files.length; i++) {
+    const election = elections[i]
+    const file = files[i]
+    if (!!file && !!election) {
+      const filename = `${getFullFileName(election)}`
+      zip.file(filename, file)
+    }
+  }
+
+  return zip.generate({ type: "nodebuffer" })
+}
+
+/**
+ * Returns the identifier of an election in the filename format.
+ *
+ * @param election Election to get identifier for
+ * @returns `[committee]_[constituencies]_[status groups]`
+ */
+export const getElectionFileName = (election: Election) =>
+  `${getCommitteeDisplayText(election.committee)}_${election.constituencies
+    .map((c) => getConstituencyDisplayText(c))
+    .join("-")}_${election.statusGroups.map((sg) => getStatusGroupDisplayText(sg)).join("-")}`

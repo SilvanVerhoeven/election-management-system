@@ -9,6 +9,12 @@ import ConstituencyDisplay from "../displays/ConstituencyDisplay"
 const ElectionTable = ({ data }: { data: Election[] }) => {
   const columns: ColumnsType<Election> = [
     {
+      title: "Name",
+      dataIndex: ["name"],
+      width: 200,
+      sorter: (a, b) => (a.name ?? "").localeCompare(b.name ?? ""),
+    },
+    {
       title: "Gremium",
       dataIndex: ["committee"],
       width: 200,

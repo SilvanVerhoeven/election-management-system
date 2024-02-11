@@ -7,6 +7,7 @@ import { Election, templateType } from "src/types"
 import { generateBallot } from "src/core/lib/ballot"
 import { Ctx } from "blitz"
 import { getElectionFileName } from "src/core/lib/files"
+import getElectionSet from "../basis/queries/getElectionSet"
 
 export const getBallotFileName = (election: Election) => {
   return `stimmzettel-${getElectionFileName(election)}`
@@ -16,12 +17,14 @@ export const getBallotFileType = () => "docx"
 
 export const downloadBallot = async (election: Election, ctx: Ctx) => {
   const lists = await getCandidateLists(election.globalId, ctx)
+  const electionSet = await getElectionSet({ globalId: election.runsAtId }, ctx)
 
   const template = await getTemplate(templateType.Ballot, ctx)
   if (!template) throw new Error("No ballot template set")
 
   return await generateBallot(
     {
+      electionSet,
       election,
       lists,
     },

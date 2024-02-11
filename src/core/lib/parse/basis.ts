@@ -195,6 +195,7 @@ export type ParsedCommitteeData = {
 }
 
 export type ParsedElectionData = {
+  name?: string
   committeeNameOrShortName: string
   statusGroupNameOrShortNames: string[]
   constituencyNameOrShortNames: string[]
@@ -289,10 +290,11 @@ const parseElections = (sheet: Worksheet): ParsedElectionData[] => {
   return rawRows
     .map((row) => {
       return {
-        committeeNameOrShortName: row.getCell(1).text,
-        statusGroupNameOrShortNames: parseList(row.getCell(2).text),
-        constituencyNameOrShortNames: parseList(row.getCell(3).text),
-        numberOfSeats: (row.getCell(4).value?.valueOf() || 0) as number,
+        name: row.getCell(1).text || undefined,
+        committeeNameOrShortName: row.getCell(2).text,
+        statusGroupNameOrShortNames: parseList(row.getCell(3).text),
+        constituencyNameOrShortNames: parseList(row.getCell(4).text),
+        numberOfSeats: (row.getCell(5).value?.valueOf() || 0) as number,
       }
     })
     .filter(

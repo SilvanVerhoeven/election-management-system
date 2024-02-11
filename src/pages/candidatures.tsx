@@ -31,6 +31,7 @@ import createCandidateList from "./api/basis/mutations/createCandidateList"
 import createVersion from "./api/basis/mutations/createVersion"
 import createCandidacies from "./api/basis/mutations/createCandidacies"
 import getCandidateLists from "./api/basis/queries/getCandidateLists"
+import { getDisplayText } from "src/core/components/displays/ElectionDisplay"
 
 const { Title, Text } = Typography
 
@@ -193,6 +194,7 @@ const CandidaturesPage: BlitzPage = () => {
     if (!election) return false
     return (
       election.globalId.toString().includes(lowerCaseInput) ||
+      (!!election.name && election.name.toLowerCase().includes(lowerCaseInput)) ||
       election.committee.name.toLowerCase().includes(lowerCaseInput) ||
       election.committee.shortName?.toLowerCase().includes(lowerCaseInput) ||
       election.committee.globalId.toString().includes(lowerCaseInput) ||
@@ -288,20 +290,14 @@ const CandidaturesPage: BlitzPage = () => {
             <Select
               showSearch
               labelInValue
-              placeholder="Gremium, Status-Gruppe oder Wahlkreis eingeben"
+              placeholder="Name der Wahl, Gremium, Status-Gruppe oder Wahlkreis eingeben"
               filterOption={filterElection}
               options={elections.map((election) => {
                 return {
                   value: election.globalId,
-                  label: `#${election.globalId}: ${
-                    election.committee.shortName ?? election.committee.name
-                  } - ${election.constituencies
-                    .map((c) => c.shortName ?? c.name)
-                    .join(", ")} - ${election.statusGroups
-                    .map((sg) => sg.shortName ?? sg.name)
-                    .join(", ")} (${election.numberOfSeats} ${
-                    election.numberOfSeats == 1 ? "Sitz" : "Sitze"
-                  })`,
+                  label: `#${election.globalId}: ${getDisplayText(election)} (${
+                    election.numberOfSeats
+                  } ${election.numberOfSeats == 1 ? "Sitz" : "Sitze"})`,
                 }
               })}
             />

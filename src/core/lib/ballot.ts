@@ -1,9 +1,10 @@
-import { CandidateList, Election, Upload } from "src/types"
+import { CandidateList, Election, ElectionSet, Upload } from "src/types"
 import { formatList } from "./parse"
 import { generateWordDocument } from "../word"
 import { getDisplayText } from "../components/displays/SubjectDisplay"
 
 export interface BallotGenerationData {
+  electionSet: ElectionSet
   election: Election
   lists: CandidateList[]
 }
@@ -31,6 +32,8 @@ interface BallotRenderListData {
 }
 
 interface BallotRenderData {
+  year: number
+  electionName: string | null
   committee: string
   statusGroup: string
   lists: BallotRenderListData[]
@@ -87,6 +90,8 @@ const structureLists = (lists: CandidateList[]): BallotRenderListData[] => {
  */
 const structureForRender = (data: BallotGenerationData): BallotRenderData => {
   return {
+    electionName: data.election.name || null,
+    year: data.electionSet.startDate.getFullYear(),
     committee: data.election.committee.name,
     statusGroup: formatList(data.election.statusGroups.map((sg) => sg.name)),
     lists: structureLists(data.lists),

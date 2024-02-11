@@ -4,6 +4,7 @@ import db, { Election as DbElection } from "db"
 import findElection from "../queries/findElection"
 
 export interface ElectionProps {
+  name?: string
   numberOfSeats: number
   committeeId: number
   eligibleStatusGroupIds: number[]
@@ -118,6 +119,7 @@ const createNewConstituencyEligibilities = async (
 export default resolver.pipe(
   async (
     {
+      name,
       numberOfSeats,
       committeeId,
       eligibleStatusGroupIds,
@@ -129,6 +131,7 @@ export default resolver.pipe(
   ): Promise<DbElection> => {
     const match = await findElection(
       {
+        name,
         committeeId,
         eligibleConstituencyIds,
         eligibleStatusGroupIds,
@@ -137,7 +140,11 @@ export default resolver.pipe(
       ctx
     )
 
-    const isCompleteMatch = match && match.numberOfSeats == numberOfSeats
+    const isCompleteMatch =
+      match &&
+      match.committeeId == committeeId &&
+      match.name == name &&
+      match.numberOfSeats == numberOfSeats
 
     if (isCompleteMatch) return match
 
@@ -147,6 +154,7 @@ export default resolver.pipe(
 
     const newElection = await db.election.create({
       data: {
+        name: name || undefined,
         globalId: newElectionId,
         numberOfSeats,
         committeeId,

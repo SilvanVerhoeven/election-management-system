@@ -15,11 +15,14 @@ export default resolver.pipe(async (electionGlobalId: number, ctx: Ctx): Promise
     where: {
       electionId: electionGlobalId,
     },
+    orderBy: { version: { createdAt: "desc" } },
   })
 
   return await Promise.all(
-    dbConnections.map(
-      async (dbConnection) => await getStatusGroup({ globalId: dbConnection.statusGroupId }, ctx)
-    )
+    dbConnections
+      .filter((connection) => !connection.deleted)
+      .map(
+        async (dbConnection) => await getStatusGroup({ globalId: dbConnection.statusGroupId }, ctx)
+      )
   )
 })

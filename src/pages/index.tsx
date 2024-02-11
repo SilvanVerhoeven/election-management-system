@@ -43,11 +43,12 @@ const HomePage: BlitzPage = () => {
   })
   const [data, setDisplayData] = useState<Basis | null>()
 
-  const { isUploading,
+  const {
+    isUploading,
     messageApi,
     contextHolder,
     handleFileChange: _handleFileChange,
-    uploadFile
+    uploadFile,
   } = useUpload()
 
 
@@ -163,7 +164,8 @@ const HomePage: BlitzPage = () => {
           </>,
           10
         )
-      })
+      }
+    )
 
   return (
     <>

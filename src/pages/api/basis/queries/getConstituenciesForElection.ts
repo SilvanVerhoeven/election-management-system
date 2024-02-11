@@ -16,13 +16,16 @@ export default resolver.pipe(
       where: {
         electionId: electionGlobalId,
       },
+      orderBy: { version: { createdAt: "desc" } },
     })
 
     return await Promise.all(
-      dbConnections.map(
-        async (dbConnection) =>
-          await getConstituency({ globalId: dbConnection.constituencyId }, ctx)
-      )
+      dbConnections
+        .filter((connection) => !connection.deleted)
+        .map(
+          async (dbConnection) =>
+            await getConstituency({ globalId: dbConnection.constituencyId }, ctx)
+        )
     )
   }
 )

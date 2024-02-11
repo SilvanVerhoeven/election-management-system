@@ -39,6 +39,12 @@ const GenerationActions = ({ data }: { data: GenerationListEntry }) => {
 const GenerationTable = ({ data }: { data: GenerationListEntry[] }) => {
   const columns: ColumnsType<GenerationListEntry> = [
     {
+      title: "Name",
+      dataIndex: ["election", "name"],
+      width: 150,
+      sorter: (a, b) => (a.election.name ?? "").localeCompare(b.election.name ?? ""),
+    },
+    {
       title: "Gremium",
       dataIndex: ["election", "committee", "name"],
       width: 150,

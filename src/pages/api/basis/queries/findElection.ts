@@ -6,6 +6,7 @@ import getConstituenciesForElection from "./getConstituenciesForElection"
 import { haveEqualValues } from "src/core/lib/array"
 
 export interface FindElectionProps {
+  name?: string
   committeeId: number
   runsAtId: number
   eligibleStatusGroupIds: number[]
@@ -19,14 +20,26 @@ export interface FindElectionProps {
  */
 export default resolver.pipe(
   async (
-    { committeeId, runsAtId, eligibleConstituencyIds, eligibleStatusGroupIds }: FindElectionProps,
+    {
+      name,
+      committeeId,
+      runsAtId,
+      eligibleConstituencyIds,
+      eligibleStatusGroupIds,
+    }: FindElectionProps,
     ctx: Ctx
   ): Promise<DbElection | null> => {
     const possibleMatches = await db.election.findMany({
       where: {
-        committeeId,
-        runsAtId,
+        OR: [
+          {
+            committeeId,
+            runsAtId,
+          },
+          !!name ? { name, runsAtId } : {},
+        ],
       },
+      distinct: ["globalId"],
       orderBy: { version: { createdAt: "desc" } },
     })
 

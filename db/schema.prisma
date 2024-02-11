@@ -255,6 +255,7 @@ model Election {
   numberOfSeats Int
   committeeId   Int // Committee globalId
   runsAtId      Int // ElectionSet globalId
+  name          String?
   version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
 

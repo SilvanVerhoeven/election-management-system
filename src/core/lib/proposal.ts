@@ -30,6 +30,7 @@ interface ProposalRenderStatusGroupsData {
 
 interface ProposalRenderData {
   year: number
+  electionName: string | null
   committee: string
   statusGroups: ProposalRenderStatusGroupsData[]
 }
@@ -90,6 +91,7 @@ const structureLists = (lists: CandidateList[]): ProposalRenderStatusGroupsData[
  */
 const structureForRender = (data: ProposalGenerationData): ProposalRenderData => {
   return {
+    electionName: data.election.name || null,
     year: data.electionSet.startDate.getFullYear(),
     committee: data.election.committee.name,
     statusGroups: structureLists(data.lists),
@@ -107,6 +109,5 @@ export const generateProposal = async (
   data: ProposalGenerationData,
   template: Upload
 ): Promise<Buffer> => {
-  console.log(JSON.stringify(structureForRender(data)))
   return generateWordDocument(structureForRender(data), template)
 }

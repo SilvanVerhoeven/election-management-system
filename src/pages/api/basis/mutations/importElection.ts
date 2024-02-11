@@ -151,6 +151,7 @@ const importElections = async (
 
     await createElection(
       {
+        name: election.name,
         committeeId: committee.globalId,
         eligibleStatusGroupIds: Array.from(new Set(statusGroups.map((sg) => sg.globalId))),
         eligibleConstituencyIds: Array.from(new Set(constituencies.map((c) => c.globalId))),

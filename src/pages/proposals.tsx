@@ -52,7 +52,6 @@ const ProposalPage: BlitzPage = () => {
   }
 
   const onDownload = async (electionId?: number) => {
-    console.log(electionId)
     try {
       const response = await fetch(
         electionId ? `/api/proposals/${electionId}` : `/api/proposals/download`,

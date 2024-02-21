@@ -94,8 +94,9 @@ model Person {
 
 model Subject {
   globalId    Int
-  name        String  @unique
-  shortName   String? @unique
+  externalId  Int
+  name        String
+  shortName   String?
   belongsToId Int // Unit globalId
   version     Version @relation(fields: [versionId], references: [id])
   versionId   Int
@@ -139,6 +140,7 @@ model Constituency {
 
 model Unit {
   globalId         Int
+  externalId       Int
   type             String //ENUM: faculty/department
   name             String
   shortName        String?

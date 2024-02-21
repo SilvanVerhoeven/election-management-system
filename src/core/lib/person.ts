@@ -17,6 +17,14 @@ export const byName = (person1: Candidate, person2: Candidate) =>
 export const fullName = (person: Candidate) => `${person.firstName} ${person.lastName}`
 
 /**
+ * Returns the full name of a person in the format of 'lastname, firstname'.
+ *
+ * @param person Person to return full name for
+ * @returns Full name of a person, e.g. `Mustermensch, Mika`
+ */
+export const fullNameLastFirst = (person: Candidate) => `${person.lastName}, ${person.firstName}`
+
+/**
  * Returns a person's status group with the highest priority, i.e. the status group the person should be counted to.
  *
  * @param person Person to get status group for

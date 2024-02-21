@@ -1,9 +1,9 @@
 import { api } from "src/blitz-server"
 import { handleFileUpload } from "../files/upload"
-import importPersons from "../basis/mutations/importPersons"
+import importUnits from "../basis/mutations/importUnits"
 
 /**
- * Import persons.
+ * Import subjects.
  * Request must contain person excel file.
  * More details: see `handleFileUpload` method.
  */
@@ -12,7 +12,7 @@ const handler = api(async (req, res, ctx) => {
     const upload = await handleFileUpload(req, res, ctx)
 
     try {
-      await importPersons(upload.id, ctx)
+      res.status(200).json(await importUnits(upload.id, ctx))
     } catch (error) {
       throw {
         statusCode: 400,
@@ -20,8 +20,6 @@ const handler = api(async (req, res, ctx) => {
         message: "DB import failed: " + error.message,
       }
     }
-
-    res.status(200).json(upload)
   } catch (error) {
     res.status(error.statusCode ?? 500).end(error.message)
   }

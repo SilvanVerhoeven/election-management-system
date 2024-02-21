@@ -5,6 +5,7 @@ import { UnitType } from "src/types"
 
 export interface UnitProps {
   type: UnitType
+  externalId: number
   name: string
   shortName?: string
   description?: string
@@ -20,18 +21,28 @@ export interface UnitProps {
  */
 export default resolver.pipe(
   async (
-    { type, name, shortName, description, associatedWithId, assignedToId, versionId }: UnitProps,
+    {
+      type,
+      externalId,
+      name,
+      shortName,
+      description,
+      associatedWithId,
+      assignedToId,
+      versionId,
+    }: UnitProps,
     ctx: Ctx
   ): Promise<DbUnit> => {
     const match = await db.unit.findFirst({
       where: {
-        OR: [{ name }, { shortName }],
+        externalId,
       },
       orderBy: { version: { createdAt: "desc" } },
     })
 
     if (match) {
       const isCompleteMatch =
+        match &&
         match.name == name &&
         match.shortName == (shortName || null) &&
         match.description == (description || null) &&
@@ -49,6 +60,7 @@ export default resolver.pipe(
     return await db.unit.create({
       data: {
         globalId: newUnitId,
+        externalId,
         name,
         shortName: shortName || null,
         description: description || null,

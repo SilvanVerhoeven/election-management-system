@@ -6,6 +6,7 @@ import {
   FileExcelOutlined,
   TeamOutlined,
   AppstoreOutlined,
+  NumberOutlined,
 } from "@ant-design/icons"
 import type { MenuProps } from "antd"
 import { Layout, Menu } from "antd"
@@ -37,7 +38,8 @@ const items: MenuItem[] = [
   getItem(Routes.CandidaturesPage().href, "Kandidaturen", "candidatures", <TeamOutlined />),
   getItem(Routes.ProposalPage().href, "Wahlvorschläge", "proposals", <AppstoreOutlined />),
   getItem(Routes.BallotPage().href, "Stimmzettel", "ballots", <FileExcelOutlined />),
-  getItem(Routes.CountPage().href, "Ergebnis", "results", <OrderedListOutlined />),
+  getItem(Routes.CountOverviewPage().href, "Auszählung", "count", <NumberOutlined />),
+  getItem(Routes.ResultPage().href, "Ergebnis", "results", <OrderedListOutlined />),
   getItem(null, "Konfiguration", "config", <SettingOutlined />, [
     getItem(Routes.TemplateConfigPage().href, "Vorlagen", "templates"),
   ]),

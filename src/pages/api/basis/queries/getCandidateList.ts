@@ -4,7 +4,7 @@ import db from "db"
 import { CandidateList, CandidateListOrderType } from "src/types"
 import getElection from "./getElection"
 import getCandidatesForList from "./getCandidatesForList"
-import { fullName } from "src/core/lib/person"
+import { fullNameLastFirst } from "src/core/lib/person"
 
 export interface GetCandidateProps {
   globalId: number
@@ -31,7 +31,7 @@ export default resolver.pipe(
     const candidates = await getCandidatesForList(dbList.globalId, ctx)
 
     if (dbList.order == CandidateListOrderType.ALPHABETICALLY) {
-      candidates.sort((a, b) => fullName(a).localeCompare(fullName(b)))
+      candidates.sort((a, b) => fullNameLastFirst(a).localeCompare(fullNameLastFirst(b)))
     }
 
     return {

@@ -12,7 +12,7 @@ import { getAntiCSRFToken } from "@blitzjs/auth"
 const { Dragger } = AntdUpload
 const { Title } = Typography
 
-const CountPage: BlitzPage = () => {
+const ResultPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
 
   const [file, setFile] = useState<UploadFile>()
@@ -133,6 +133,6 @@ const CountPage: BlitzPage = () => {
   )
 }
 
-CountPage.getLayout = (page) => <Layout title="Ergebnis-Protokoll">{page}</Layout>
+ResultPage.getLayout = (page) => <Layout title="Ergebnis-Protokoll">{page}</Layout>
 
-export default CountPage
+export default ResultPage

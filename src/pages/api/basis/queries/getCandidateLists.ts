@@ -8,10 +8,12 @@ import getCandidateList from "./getCandidateList"
  * Returns the latest version of candidate lists for given election.
  * If no election is given (i.e. `null`), all candidate lists are returned (default).
  *
- * @returns All Candidate Lists if `null` was given, candidate lists of the given election otherwise
+ * @returns All Candidate Lists if `null` was given, empty array if `undefined` was given, candidate lists of the given election otherwise
  */
 export default resolver.pipe(
-  async (electionId: null | number = null, ctx: Ctx): Promise<CandidateList[]> => {
+  async (electionId: undefined | null | number = null, ctx: Ctx): Promise<CandidateList[]> => {
+    if (electionId === undefined) return []
+
     const dbLists = await db.candidateList.findMany({
       where: {
         candidatesForId: electionId ?? undefined,

@@ -20,15 +20,15 @@ const useUpload = () => {
   const [messageApi, contextHolder] = message.useMessage()
   const [isUploading, setIsUploading] = useState(false)
 
-  const handleFileChange = async (
+  const handleFileChange = async <T>(
     change: UploadChangeParam<UploadFile>,
-    onFinish: (status: UploadFileStatus) => Promise<void> | void,
+    onFinish: (status: UploadFileStatus, response: T) => Promise<void> | void,
     onError: (status: UploadFileStatus, error: any) => Promise<void> | void
   ) => {
-    const { status, error } = change.file
+    const { status, error, response } = change.file
 
     if (status === "done") {
-      await onFinish(status)
+      await onFinish(status, response)
     } else if (status === "error") {
       await onError(status, error)
     }

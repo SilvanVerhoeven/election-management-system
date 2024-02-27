@@ -3,10 +3,10 @@ import { Ctx } from "blitz"
 import db from "db"
 import { Student } from "src/types"
 import getStatusGroupsForPerson from "./getStatusGroupsForPerson"
-import getSubject from "./getSubject"
 import getFaculty from "./getFaculty"
+import getSubjectsForPerson from "./getSubjectsForPerson"
 
-export interface FindSiteProps {
+export interface FindStudentProps {
   matriculationNumber: string
   versionId?: number
 }
@@ -19,7 +19,10 @@ export interface FindSiteProps {
  * @returns Found site
  */
 export default resolver.pipe(
-  async ({ matriculationNumber, versionId }: FindSiteProps, ctx: Ctx): Promise<Student | null> => {
+  async (
+    { matriculationNumber, versionId }: FindStudentProps,
+    ctx: Ctx
+  ): Promise<Student | null> => {
     const match = await db.person.findFirst({
       where: {
         matriculationNumber,
@@ -31,7 +34,7 @@ export default resolver.pipe(
     if (!match) return null
 
     const statusGroups = await getStatusGroupsForPerson(match.globalId, ctx)
-    const subject = !!match.subjectId ? await getSubject({ globalId: match.subjectId }, ctx) : null
+    const subjects = await getSubjectsForPerson(match.globalId, ctx)
     const explicitelyVoteAt = !!match.explicitelyVoteAtId
       ? await getFaculty({ globalId: match.explicitelyVoteAtId }, ctx)
       : null
@@ -39,7 +42,7 @@ export default resolver.pipe(
     return {
       ...match,
       statusGroups,
-      subject,
+      subjects,
       explicitelyVoteAt,
     }
   }

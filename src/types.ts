@@ -74,13 +74,12 @@ export type Data = DbUpload & {
 }
 
 type CandidateBase = DbPerson & {
-  status: CandidateStatus
   statusGroups: StatusGroup[]
 }
 
 export type Student = CandidateBase & {
   matriculationNumber: string | null
-  subject: Subject | null
+  subjects: Subject[]
   explicitelyVoteAt: Faculty | null
 }
 

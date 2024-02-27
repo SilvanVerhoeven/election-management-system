@@ -5,15 +5,14 @@ import {
   Input,
   Space,
   Tabs,
-  Upload as UploadComponent,
   DatePicker,
   Row,
   Col,
   Typography,
   Modal,
-  Table,
+  message,
 } from "antd"
-import type { TabsProps, UploadFile } from "antd"
+import type { TabsProps } from "antd"
 import { UploadOutlined } from "@ant-design/icons"
 import ConstituencyTable from "src/core/components/tables/ConstituencyTable"
 import StatusGroupTable from "src/core/components/tables/StatusGroupTable"
@@ -21,7 +20,6 @@ import ElectionTable from "src/core/components/tables/ElectionTable"
 import { saveBlob } from "src/core/lib/files"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
-import { UploadChangeParam } from "antd/es/upload"
 import { Basis } from "src/types"
 import { useQuery } from "@blitzjs/rpc"
 import dayjs from "dayjs"
@@ -29,91 +27,27 @@ import SiteTable from "src/core/components/tables/SiteTable"
 import getBasis from "./api/basis/queries/getBasis"
 import PollingStationTable from "src/core/components/tables/PollingStationTable"
 import CommitteeTable from "src/core/components/tables/CommitteeTable"
-import useUpload from "src/core/hooks/useUpload"
-import { ImportResult } from "src/core/lib/import"
-import Link from "antd/lib/typography/Link"
+import ImportTable, {
+  ImportModalUploadField,
+  ImportModalUploadFieldType,
+} from "src/core/components/tables/ImportTable"
 
 const { RangePicker } = DatePicker
 const { Text, Title } = Typography
 
-type ImportModalUploadField = {
-  type: ImportModalUploadFieldType
-  label: string
-  action: string
-  accept: string
-}
-
-enum ImportModalUploadFieldType {
-  FACULTY,
-  SUBJECT,
-}
-
-type ImportResults = Partial<Record<ImportModalUploadFieldType, ImportResult>>
-
 const HomePage: BlitzPage = () => {
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false)
-
-  const [isUpdating, setIsUpdating] = useState(false)
 
   const [initialData, { refetch: refetchData }] = useQuery(getBasis, null, {
     refetchOnWindowFocus: false,
   })
   const [data, setDisplayData] = useState<Basis | null>()
 
-  const [importResults, setImportResults] = useState<ImportResults>({})
-
   const [showImportModal, setShowImportModal] = useState(false)
   const openImportModal = () => setShowImportModal(true)
   const closeImportModal = () => setShowImportModal(false)
 
-  const [showDetailsModal, setShowDetailsModal] = useState<
-    Partial<Record<ImportModalUploadFieldType, boolean>>
-  >({})
-  const openDetailsModal = (type: ImportModalUploadFieldType) =>
-    setShowDetailsModal({ ...showDetailsModal, [type]: true })
-  const closeDetailsModal = (type: ImportModalUploadFieldType) =>
-    setShowDetailsModal({ ...showDetailsModal, [type]: undefined })
-
-  const ResultDetailsModal = ({
-    type,
-    result,
-  }: {
-    type: ImportModalUploadFieldType
-    result: ImportResult
-  }) => {
-    return (
-      <Modal
-        title="Detaillierte Import-Ergebnisse"
-        width={800}
-        open={showDetailsModal[type]}
-        onCancel={() => closeDetailsModal(type)}
-        footer={[
-          <Button key="back" type="primary" onClick={() => closeDetailsModal(type)}>
-            Schließen
-          </Button>,
-        ]}
-      >
-        <Table
-          size="small"
-          pagination={false}
-          dataSource={[...result.error, ...result.skipped]}
-          columns={[
-            { title: "Datensatz", key: "label", dataIndex: "label" },
-            { title: "Fehlermeldung", key: "error", dataIndex: "error" },
-          ]}
-        ></Table>
-      </Modal>
-    )
-  }
-
-  const {
-    isUploading,
-    messageApi,
-    contextHolder,
-    handleFileChange: _handleFileChange,
-    uploadFile,
-  } = useUpload()
-
+  const [messageApi, contextHolder] = message.useMessage()
 
   const [form] = Form.useForm()
   const updateForm = useCallback(() => {
@@ -201,38 +135,10 @@ const HomePage: BlitzPage = () => {
     setIsDownloadingExcel(false)
   }
 
-  const updateDisplay = useCallback(async () => {
-    setIsUpdating(true)
-    try {
-      setDisplayData((await refetchData()).data)
-    } finally {
-      setIsUpdating(false)
-    }
-  }, [refetchData])
-
-  const handleFileChange = async (
-    field: ImportModalUploadFieldType,
-    change: UploadChangeParam<UploadFile>
-  ) =>
-    _handleFileChange(
-      change,
-      async (_, response: ImportResult) => {
-        setImportResults({ ...importResults, [field]: response })
-        await updateDisplay()
-        void messageApi.success(`Upload erfolgreich`)
-      },
-      async (_, error) => {
-        console.error(error)
-        void messageApi.error(
-          <>
-            <Text strong>Upload fehlgeschlagen</Text>
-            <br />
-            <Text>{`${error}`}</Text>
-          </>,
-          10
-        )
-      }
-    )
+  const updateDisplay = useCallback(
+    async () => setDisplayData((await refetchData()).data),
+    [refetchData]
+  )
 
   return (
     <>
@@ -264,81 +170,53 @@ const HomePage: BlitzPage = () => {
           Der erstmalige Import von Daten sollten in der untenstehenden Reihenfolge erfolgen.
         </Text>
 
-        <Title level={5}>Daten vom ZIM</Title>
+        <Title level={5}>Basisdaten</Title>
 
-        <Table
-          size="small"
-          pagination={false}
-          dataSource={
+        <ImportTable
+          uploadFields={
             [
               {
+                key: ImportModalUploadFieldType.BASIS,
+                type: ImportModalUploadFieldType.BASIS,
+                label: "Basisdaten (.xlsx)",
+                action: "/api/import/basis",
+                accept: ".xlsx",
+              },
+            ] as (ImportModalUploadField & { key: ImportModalUploadFieldType })[]
+          }
+          onFinishedDataImport={updateDisplay}
+        />
+
+        <Title level={5}>Daten vom ZIM</Title>
+
+        <ImportTable
+          uploadFields={
+            [
+              {
+                key: ImportModalUploadFieldType.FACULTY,
                 type: ImportModalUploadFieldType.FACULTY,
                 label: "Fachbereiche/Fakultäten (.csv)",
                 action: "/api/import/units",
                 accept: ".csv",
               },
               {
+                key: ImportModalUploadFieldType.SUBJECT,
                 type: ImportModalUploadFieldType.SUBJECT,
                 label: "Fächer (.xlsx)",
                 action: "/api/import/subjects",
                 accept: ".xlsx",
               },
-            ] as ImportModalUploadField[]
-          }
-          columns={[
-            { title: "Typ", key: "type", dataIndex: "label" },
-            {
-              key: "action",
-              render: (_, record) => (
-                <UploadComponent
-                  action={record.action}
-                  maxCount={1}
-                  showUploadList={false}
-                  onChange={(change) => handleFileChange(record.type, change)}
-                  customRequest={(options) => uploadFile(options, "basis")}
-                  accept={record.accept}
-                >
-                  <Button icon={<UploadOutlined />} loading={isUploading || isUpdating}>
-                    Importieren
-                  </Button>
-                </UploadComponent>
-              ),
-            },
-            {
-              title: "Ergebnis",
-              key: "result",
-              dataIndex: "result",
-              render: (_, record) => {
-                const result = importResults[record.type]
-                if (!result) return <></>
-                if (result.skipped.length > 0 || result.error.length > 0) {
-                  return (
-                    <>
-                      {result.error.length > 0 && (
-                        <Text type="danger" style={{ display: "block" }}>
-                          {result.error.length} fehlgeschlagen
-                        </Text>
-                      )}
-                      {result.skipped.length > 0 && (
-                        <Text type="warning" style={{ display: "block" }}>
-                          {result.skipped.length} übersprungen
-                        </Text>
-                      )}
-                      <Text style={{ display: "block" }}>{result.success} importiert</Text>
-                      <ResultDetailsModal type={record.type} result={result} />
-                      <Link onClick={() => openDetailsModal(record.type)}>Details</Link>
-                    </>
-                  )
-                }
-                return (
-                  <Text type="success">
-                    Alle {importResults[record.type]!.success} Datensätze importiert
-                  </Text>
-                )
+              {
+                key: ImportModalUploadFieldType.STUDENT,
+                type: ImportModalUploadFieldType.STUDENT,
+                label: "Studierende (.xlsx)",
+                action: "/api/import/persons",
+                accept: ".xlsx",
               },
-            },
-          ]}
-        ></Table>
+            ] as (ImportModalUploadField & { key: ImportModalUploadFieldType })[]
+          }
+          onFinishedDataImport={updateDisplay}
+        />
       </Modal>
     </>
   )

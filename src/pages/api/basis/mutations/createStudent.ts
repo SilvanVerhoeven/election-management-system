@@ -5,8 +5,8 @@ import { CandidateStatus, Student } from "src/types"
 import findStudent from "../queries/findStudent"
 import { haveEqualValues } from "src/core/lib/array"
 import getStatusGroupsForPerson from "../queries/getStatusGroupsForPerson"
-import getSubject from "../queries/getSubject"
 import getFaculty from "../queries/getFaculty"
+import getSubjectsForPerson from "../queries/getSubjectsForPerson"
 
 export interface CandidateProps {
   firstName: string
@@ -23,7 +23,7 @@ export interface CandidateProps {
 
 export interface StudentCandidateProps extends CandidateProps {
   matriculationNumber: string
-  subjectId: number
+  subjectIds: number[]
   explicitelyVoteAtId?: number
 }
 
@@ -85,6 +85,75 @@ const updateStatusGroupMemberships = async (
   await createNewStatusGroupMemberships(personGlobalId, statusGroupIds, versionId)
 }
 
+const setSubjectOccupenciesAsDeleted = async (
+  personId: number,
+  subjectIds: number[],
+  versionId: number
+) => {
+  const entriesToDelete = await db.subjectOccupancy.findMany({
+    where: {
+      personId,
+      subjectId: { notIn: subjectIds },
+      deleted: false,
+    },
+  })
+  await Promise.all(
+    entriesToDelete.map(async (entry) => {
+      await db.subjectOccupancy.create({
+        data: {
+          personId,
+          subjectId: entry.subjectId,
+          deleted: true,
+          version: { connect: { id: versionId } },
+        },
+      })
+    })
+  )
+}
+
+const createNewSubjectOccupencies = async (
+  personId: number,
+  subjectIds: number[],
+  versionId: number
+) => {
+  await Promise.all(
+    subjectIds.map(async (subjectId) => {
+      await db.subjectOccupancy.upsert({
+        where: {
+          personId_subjectId_deleted: { personId, subjectId, deleted: false },
+        },
+        update: {},
+        create: {
+          personId,
+          subjectId,
+          deleted: false,
+          version: { connect: { id: versionId } },
+        },
+      })
+    })
+  )
+}
+
+const updateSubjectOccupencies = async (
+  personGlobalId: number,
+  subjectIds: number[],
+  versionId: number
+) => {
+  await setSubjectOccupenciesAsDeleted(personGlobalId, subjectIds, versionId)
+  await createNewSubjectOccupencies(personGlobalId, subjectIds, versionId)
+}
+
+const updateReferences = async (
+  personGlobalId: number,
+  versionId: number,
+  subjectIds: number[],
+  statusGroupIds: number[]
+) =>
+  Promise.all([
+    updateStatusGroupMemberships(personGlobalId, statusGroupIds, versionId),
+    updateSubjectOccupencies(personGlobalId, subjectIds, versionId),
+  ])
+
 /**
  * Creates a new student candidate, unless it matches another student candidate completely.
  *
@@ -96,7 +165,7 @@ export default resolver.pipe(
       firstName,
       lastName,
       matriculationNumber,
-      subjectId,
+      subjectIds,
       comment,
       electabilityVerifiedOn,
       email,
@@ -115,7 +184,6 @@ export default resolver.pipe(
       match &&
       match.firstName == firstName &&
       match.lastName == lastName &&
-      match.subjectId == subjectId &&
       match.comment == (comment ?? null) &&
       match.electabilityVerifiedOn == (electabilityVerifiedOn ?? null) &&
       match.email == (email ?? null) &&
@@ -128,10 +196,14 @@ export default resolver.pipe(
       haveEqualValues(
         match.statusGroups.map((sg) => sg.globalId),
         statusGroupIds ?? []
+      ) &&
+      haveEqualValues(
+        match.subjects.map((sg) => sg.globalId),
+        subjectIds
       )
 
     if (isLocalMatch && !isReferenceMatch) {
-      await updateStatusGroupMemberships(match.globalId, statusGroupIds, versionId)
+      await updateReferences(match.globalId, versionId, subjectIds, statusGroupIds)
     }
 
     if (isLocalMatch) return match
@@ -150,15 +222,14 @@ export default resolver.pipe(
         email,
         explicitelyVoteAtId,
         isElectionHelper,
-        matriculationNumber: newStudentId.toString(), // Mockup until we have proper matriculation numbers
+        matriculationNumber,
         status,
-        subjectId,
         worksAtId,
         version: { connect: { id: versionId } },
       },
     })
 
-    await updateStatusGroupMemberships(newStudent.globalId, statusGroupIds, versionId)
+    await updateReferences(newStudent.globalId, versionId, subjectIds, statusGroupIds)
 
     return {
       ...newStudent,
@@ -166,9 +237,7 @@ export default resolver.pipe(
       explicitelyVoteAt: newStudent.explicitelyVoteAtId
         ? await getFaculty({ globalId: newStudent.explicitelyVoteAtId }, ctx)
         : null,
-      subject: newStudent.subjectId
-        ? await getSubject({ globalId: newStudent.subjectId }, ctx)
-        : null,
+      subjects: await getSubjectsForPerson(newStudent.globalId, ctx),
     }
   }
 )

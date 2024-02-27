@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises"
-import { getFilePath } from "./lib/files"
+import { getFilePath } from "./files"
 import { Upload } from "src/types"
 import PizZip from "pizzip"
 import Docxtemplater from "docxtemplater"

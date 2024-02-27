@@ -12,7 +12,7 @@ const handler = api(async (req, res, ctx) => {
     const upload = await handleFileUpload(req, res, ctx)
 
     try {
-      await importElection(upload.id, ctx)
+      res.status(200).json(await importElection(upload.id, ctx))
     } catch (error) {
       throw {
         statusCode: 400,
@@ -20,8 +20,6 @@ const handler = api(async (req, res, ctx) => {
         message: "DB import failed: " + error.message,
       }
     }
-
-    res.status(200).json(upload)
   } catch (error) {
     res.status(error.statusCode ?? 500).end(error.message)
   }

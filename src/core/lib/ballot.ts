@@ -1,6 +1,6 @@
 import { CandidateList, Election, ElectionSet, Upload } from "src/types"
 import { formatList } from "./parse"
-import { generateWordDocument } from "../word"
+import { generateWordDocument } from "./word"
 import { getDisplayText } from "../components/displays/SubjectDisplay"
 
 export interface BallotGenerationData {
@@ -72,7 +72,7 @@ const structureLists = (lists: CandidateList[]): BallotRenderListData[] => {
         parallelCandidates[offset + 1] = {
           firstName: candidate.firstName,
           lastName: candidate.lastName,
-          unit: "subject" in candidate ? getDisplayText(candidate.subject) : "TODO",
+          unit: "subjects" in candidate ? getDisplayText(candidate.subjects) : "TODO",
         }
       }
       group.members.push(parallelCandidates as BallotRenderListRowData)

@@ -1,5 +1,5 @@
 import { CandidateList, Election, ElectionSet, StatusGroup, Upload } from "src/types"
-import { generateWordDocument } from "../word"
+import { generateWordDocument } from "./word"
 import { getDisplayText } from "../components/displays/SubjectDisplay"
 import { getCandidateListOrderDisplayText } from "./basis"
 import { activeStatusGroup } from "./person"
@@ -74,7 +74,7 @@ const structureLists = (lists: CandidateList[]): ProposalRenderStatusGroupsData[
                 index: index + 1,
                 firstName: candidate.firstName,
                 lastName: candidate.lastName,
-                unit: "subject" in candidate ? getDisplayText(candidate.subject) : "TODO",
+                unit: "subjects" in candidate ? getDisplayText(candidate.subjects) : "TODO",
               }
             }),
           }

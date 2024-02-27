@@ -4,6 +4,7 @@ import db from "db"
 import { Faculty, UnitType } from "src/types"
 
 export interface FacultyProps {
+  externalId: number
   name: string
   shortName?: string
   description?: string
@@ -18,17 +19,21 @@ export interface FacultyProps {
  * @returns Newly created or matching faculty in the bare DB form
  */
 export default resolver.pipe(
-  async ({ name, shortName, description, versionId }: FacultyProps, ctx: Ctx): Promise<Faculty> => {
+  async (
+    { externalId, name, shortName, description, versionId }: FacultyProps,
+    ctx: Ctx
+  ): Promise<Faculty> => {
     const match = await db.unit.findFirst({
       where: {
         type: UnitType.FACULTY,
-        OR: [{ name }, { shortName }],
+        externalId,
       },
       orderBy: { version: { createdAt: "desc" } },
     })
 
     if (match) {
       const isCompleteMatch =
+        match &&
         match.name == name &&
         match.shortName == (shortName || null) &&
         match.description == (description || null)
@@ -48,11 +53,12 @@ export default resolver.pipe(
       data: {
         type: UnitType.FACULTY,
         globalId: newFacultyId,
+        externalId,
         name,
         shortName: shortName || null,
         description: description || null,
-        assignedToId: 0, // must be done later
-        associatedWithId: 0,
+        assignedToId: -1, // must be done later
+        associatedWithId: -1,
         version: { connect: { id: versionId } },
       },
     })

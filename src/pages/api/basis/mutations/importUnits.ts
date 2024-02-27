@@ -2,8 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import { ParsedUnitData, parseUnitsCSV } from "src/core/lib/parse/units"
 import { ImportResult, importData } from "src/core/lib/import"
-import createUnit from "./createUnit"
-import { UnitType } from "src/types"
+import createFaculty from "./createFaculty"
 
 const importUnits = async (units: ParsedUnitData[], versionId: number, ctx: Ctx) => {
   const result: ImportResult = {
@@ -14,14 +13,11 @@ const importUnits = async (units: ParsedUnitData[], versionId: number, ctx: Ctx)
 
   for (const unit of units) {
     try {
-      await createUnit(
+      await createFaculty(
         {
           externalId: unit.externalId,
           name: unit.name,
           shortName: unit.shortName,
-          type: UnitType.FACULTY,
-          assignedToId: -1,
-          associatedWithId: -1,
           versionId,
         },
         ctx

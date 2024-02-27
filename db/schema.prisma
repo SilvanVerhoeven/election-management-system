@@ -78,7 +78,6 @@ model Person {
   isElectionHelper       Boolean?
   matriculationNumber    String? // only students
   createdAt              DateTime  @default(now())
-  subjectId              Int? // Subject globalId
   explicitelyVoteAtId    Int? // Unit globalId
   worksAtId              Int? // Unit globalId
   version                Version   @relation(fields: [versionId], references: [id])
@@ -88,6 +87,7 @@ model Person {
   // VotingResult
   // CandidateListPosition
   // StatusGroupMembership
+  // SubjectOccupancy
 
   @@id([globalId, versionId])
 }
@@ -102,9 +102,19 @@ model Subject {
   versionId   Int
 
   // REFERENCED BY
-  // Person
+  // SubjectOccupancy
 
   @@id([globalId, versionId])
+}
+
+model SubjectOccupancy {
+  personId  Int // Person globalId
+  subjectId Int // Subject globalId
+  deleted   Boolean @default(false)
+  version   Version @relation(fields: [versionId], references: [id])
+  versionId Int
+
+  @@id([personId, subjectId, deleted])
 }
 
 model Site {
@@ -316,6 +326,7 @@ model Version {
   StatusGroupEligibility  StatusGroupEligibility[]
   StatusGroupMembership   StatusGroupMembership[]
   Upload                  Upload?
+  SubjectOccupancy        SubjectOccupancy[]
 }
 
 model Upload {

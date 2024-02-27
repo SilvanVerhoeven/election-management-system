@@ -7,7 +7,7 @@ import {
 } from "./candidates"
 import { CandidateListOrderType, PersonType, Upload } from "src/types"
 import { formatList } from "./parse"
-import { generateWordDocument } from "../word"
+import { generateWordDocument } from "./word"
 
 const formatCandidate = (candidate: _Candidate | null) => {
   return {

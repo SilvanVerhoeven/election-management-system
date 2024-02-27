@@ -2,8 +2,8 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
 import { Candidate } from "src/types"
-import getSubject from "./getSubject"
 import getStatusGroupsForPerson from "./getStatusGroupsForPerson"
+import getSubjectsForPerson from "./getSubjectsForPerson"
 
 /**
  * Returns the latest version of all persons.
@@ -22,15 +22,13 @@ export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Candidate[]> => 
 
   return await Promise.all(
     dbPersons.map(async (dbPerson) => {
-      const subject = dbPerson.subjectId
-        ? await getSubject({ globalId: dbPerson.subjectId }, ctx)
-        : null
+      const subjects = await getSubjectsForPerson(dbPerson.globalId, ctx)
       const statusGroups = await getStatusGroupsForPerson(dbPerson.globalId, ctx)
 
       return {
         ...dbPerson,
         statusGroups,
-        subject,
+        subjects,
         explicitelyVoteAt: null,
       }
     })

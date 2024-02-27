@@ -1,8 +1,5 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
-import getUpload from "../../files/queries/getUpload"
-import { getFilePath } from "src/core/lib/files"
-import { readFile } from "fs/promises"
 import createSite from "./createSite"
 import {
   ParsedCommitteeData,
@@ -25,8 +22,8 @@ import findCommittee from "../queries/findCommittee"
 import findStatusGroup from "../queries/findStatusGroup"
 import findConstituency from "../queries/findConstituency"
 import createElectionSet from "./createElectionSet"
-import createVersion from "./createVersion"
 import { Constituency, StatusGroup } from "src/types"
+import { ImportResult, importData } from "src/core/lib/import"
 
 const importGeneralData = async (general: ParsedGeneralData, versionId: number, ctx: Ctx) =>
   await createElectionSet(
@@ -40,6 +37,12 @@ const importGeneralData = async (general: ParsedGeneralData, versionId: number, 
   )
 
 const importSites = async (sites: ParsedSiteData[], versionId: number, ctx: Ctx) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
   for (const site of sites) {
     await createSite(
       {
@@ -50,7 +53,10 @@ const importSites = async (sites: ParsedSiteData[], versionId: number, ctx: Ctx)
       },
       ctx
     )
+    result.success++
   }
+
+  return result
 }
 
 const importPollingStations = async (
@@ -58,6 +64,12 @@ const importPollingStations = async (
   versionId: number,
   ctx: Ctx
 ) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
   for (const pollingStation of pollingStations) {
     const site = await findSite({ nameOrShortName: pollingStation.siteNameOrShortName }, ctx)
     await createPollingStation(
@@ -69,7 +81,10 @@ const importPollingStations = async (
       },
       ctx
     )
+    result.success++
   }
+
+  return result
 }
 
 const importConstituencies = async (
@@ -77,6 +92,12 @@ const importConstituencies = async (
   versionId: number,
   ctx: Ctx
 ) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
   for (const constituency of constituencies) {
     const pollingStation = await findPollingStation(
       { nameOrShortName: constituency.pollingStationNameOrShortName },
@@ -91,7 +112,10 @@ const importConstituencies = async (
       },
       ctx
     )
+    result.success++
   }
+
+  return result
 }
 
 const importStatusGroups = async (
@@ -99,6 +123,12 @@ const importStatusGroups = async (
   versionId: number,
   ctx: Ctx
 ) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
   for (const statusGroup of statusGroups) {
     await createStatusGroup(
       {
@@ -109,10 +139,19 @@ const importStatusGroups = async (
       },
       ctx
     )
+    result.success++
   }
+
+  return result
 }
 
 const importCommittees = async (committees: ParsedCommitteeData[], versionId: number, ctx: Ctx) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
   for (const committee of committees) {
     await createCommittee(
       {
@@ -122,7 +161,10 @@ const importCommittees = async (committees: ParsedCommitteeData[], versionId: nu
       },
       ctx
     )
+    result.success++
   }
+
+  return result
 }
 
 const importElections = async (
@@ -131,6 +173,12 @@ const importElections = async (
   versionId: number,
   ctx: Ctx
 ) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
   for (const election of elections) {
     const committee = await findCommittee(
       {
@@ -161,24 +209,40 @@ const importElections = async (
       },
       ctx
     )
+
+    result.success++
   }
+
+  return result
 }
 
 /**
  * Imports the election data stored in the upload with the given ID.
  */
 export default resolver.pipe(async (uploadId: number, ctx: Ctx) => {
-  const upload = await getUpload(uploadId, ctx)
-  const buffer = await readFile(getFilePath(upload))
-  const data = await parseBasisExcel(buffer)
+  return await importData(
+    uploadId,
+    parseBasisExcel,
+    async (data, versionId, ctx) => {
+      const electionSet = await importGeneralData(data.general, versionId, ctx)
+      const results: ImportResult[] = []
+      results.push(await importSites(data.sites, versionId, ctx))
+      results.push(await importPollingStations(data.pollingStations, versionId, ctx))
+      results.push(await importConstituencies(data.constituencies, versionId, ctx))
+      results.push(await importStatusGroups(data.statusGroups, versionId, ctx))
+      results.push(await importCommittees(data.committees, versionId, ctx))
+      results.push(await importElections(data.elections, electionSet.globalId, versionId, ctx))
 
-  const version = await createVersion({ uploadId: upload.id }, ctx)
-
-  const electionSet = await importGeneralData(data.general, version.id, ctx)
-  await importSites(data.sites, version.id, ctx)
-  await importPollingStations(data.pollingStations, version.id, ctx)
-  await importConstituencies(data.constituencies, version.id, ctx)
-  await importStatusGroups(data.statusGroups, version.id, ctx)
-  await importCommittees(data.committees, version.id, ctx)
-  await importElections(data.elections, electionSet.globalId, version.id, ctx)
+      return results.reduce(
+        (subSum, currResult) => {
+          subSum.error.concat(currResult.error)
+          subSum.skipped.concat(currResult.skipped)
+          subSum.success += currResult.success
+          return subSum
+        },
+        { error: [], skipped: [], success: 0 }
+      )
+    },
+    ctx
+  )
 })

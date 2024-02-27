@@ -1,13 +1,15 @@
 import { Subject } from "src/types"
 import { TextProps } from "antd/es/typography/Text"
 import AbbreveationDisplay from "./AbbreveationDisplay"
-import { Typography } from "antd"
+import { Tag, Typography } from "antd"
 
 export interface SubjectDisplayProps extends TextProps {
-  subject: Subject | null | undefined
+  subjects: Subject[] | null | undefined
 }
 
-export const getDisplayText = (subject: Subject | null | undefined) =>
+export const getDisplayText = (subjects: Subject[]) => subjects.map(getSingleDisplayText).join(", ")
+
+export const getSingleDisplayText = (subject: Subject | null | undefined) =>
   subject === undefined ? "-" : subject === null ? "Fehlt" : subject.shortName ?? subject.name
 
 const { Text } = Typography
@@ -18,15 +20,19 @@ const { Text } = Typography
  * @param subject If undefined: Subject assumed to come from employee, displayed as not applicable, valid input. If null: Subject assumed to be missing on a student. If given: Displayed normalls
  * @returns
  */
-const SubjectDisplay = ({ subject, ...textProps }: SubjectDisplayProps) => {
-  return subject === undefined ? (
-    <Text disabled>-</Text>
-  ) : subject === null ? (
+const SubjectDisplay = ({ subjects, ...textProps }: SubjectDisplayProps) => {
+  return subjects === null ? (
     <Text disabled italic>
       Fehlt
     </Text>
+  ) : subjects === undefined || subjects.length == 0 ? (
+    <Text disabled>-</Text>
   ) : (
-    <AbbreveationDisplay text={subject.name} abbreveation={subject.shortName} {...textProps} />
+    subjects.map((subject) => (
+      <Tag key={subject.globalId}>
+        <AbbreveationDisplay text={subject.name} abbreveation={subject.shortName} {...textProps} />
+      </Tag>
+    ))
   )
 }
 

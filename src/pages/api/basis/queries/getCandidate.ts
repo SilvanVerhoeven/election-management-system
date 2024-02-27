@@ -2,9 +2,9 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
 import { Candidate } from "src/types"
-import getSubject from "./getSubject"
 import getStatusGroupsForPerson from "./getStatusGroupsForPerson"
 import getFaculty from "./getFaculty"
+import getSubjectsForPerson from "./getSubjectsForPerson"
 
 export interface GetCandidateProps {
   globalId: number
@@ -28,13 +28,23 @@ export default resolver.pipe(
       orderBy: { version: { createdAt: "desc" } },
     })
 
-    return {
+    const candidateBase = {
       ...dbPerson,
-      subject: dbPerson.subjectId ? await getSubject({ globalId: dbPerson.subjectId }, ctx) : null,
       statusGroups: await getStatusGroupsForPerson(dbPerson.globalId, ctx),
-      explicitelyVoteAt: dbPerson.explicitelyVoteAtId
-        ? await getFaculty({ globalId: dbPerson.explicitelyVoteAtId }, ctx)
-        : null,
     }
+
+    // whether dbPerson is a student or an employee
+    return dbPerson.matriculationNumber === null
+      ? {
+          ...candidateBase,
+          worksAt: null,
+        }
+      : {
+          ...candidateBase,
+          subjects: await getSubjectsForPerson(dbPerson.globalId, ctx),
+          explicitelyVoteAt: dbPerson.explicitelyVoteAtId
+            ? await getFaculty({ globalId: dbPerson.explicitelyVoteAtId }, ctx)
+            : null,
+        }
   }
 )

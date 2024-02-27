@@ -33,11 +33,11 @@ const PersonTable = ({ data }: { data: Candidate[] }) => {
       title: "Studiengang",
       width: 200,
       render: (person: Candidate) => (
-        <SubjectDisplay subject={"subject" in person ? person.subject : undefined} />
+        <SubjectDisplay subjects={"subjects" in person ? person.subjects : undefined} />
       ),
       sorter: (a, b) =>
-        getDisplayText("subject" in a ? a.subject : undefined).localeCompare(
-          getDisplayText("subject" in b ? b.subject : undefined)
+        ("subjects" in a ? getDisplayText(a.subjects) : "").localeCompare(
+          "subjects" in b ? getDisplayText(b.subjects) : ""
         ),
     },
     {
@@ -82,7 +82,9 @@ const PersonTable = ({ data }: { data: Candidate[] }) => {
     <Table
       virtual
       columns={columns}
-      dataSource={data}
+      dataSource={data.map((person) => {
+        return { ...person, key: person.globalId }
+      })}
       pagination={false}
       scroll={{ x: 1000, y: 600 }}
     />

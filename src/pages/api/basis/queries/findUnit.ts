@@ -4,7 +4,8 @@ import db from "db"
 import { Unit, UnitType } from "src/types"
 
 export interface FindUnitProps {
-  externalId: number
+  externalId: string
+  type: UnitType
   versionId?: number
 }
 
@@ -17,9 +18,10 @@ export interface FindUnitProps {
  * @returns Found unit
  */
 export default resolver.pipe(
-  async ({ externalId, versionId }: FindUnitProps, ctx: Ctx): Promise<Unit> => {
+  async ({ externalId, type, versionId }: FindUnitProps, ctx: Ctx): Promise<Unit> => {
     const dbUnit = await db.unit.findFirstOrThrow({
       where: {
+        type,
         externalId,
         versionId,
       },

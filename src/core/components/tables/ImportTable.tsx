@@ -15,7 +15,10 @@ export type ImportModalUploadField = {
 }
 
 export enum ImportModalUploadFieldType {
+  ACCOUNTING_UNIT,
   BASIS,
+  DEPARTMENT,
+  EMPLOYEE,
   FACULTY,
   SUBJECT,
   STUDENT,

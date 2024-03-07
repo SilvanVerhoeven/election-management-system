@@ -3,15 +3,17 @@ import { Ctx } from "blitz"
 import createSubject from "./createSubject"
 import findUnit from "../queries/findUnit"
 import { distinct } from "src/core/lib/array"
-import { Unit } from "src/types"
+import { Unit, UnitType } from "src/types"
 import { ParsedSubjectData, parseSubjectsXLSX } from "src/core/lib/parse/subjects"
 import { ImportResult, importData, returnNullOnError } from "src/core/lib/import"
 
 const importSubjects = async (subjects: ParsedSubjectData[], versionId: number, ctx: Ctx) => {
-  const distinctUnitIds = subjects.map((subject) => subject.unitId).filter(distinct)
+  const distinctUnitIds = subjects.map((subject) => subject.unitexternalId).filter(distinct)
   const units = (
     await Promise.all(
-      distinctUnitIds.map(async (id) => returnNullOnError(() => findUnit({ externalId: id }, ctx)))
+      distinctUnitIds.map(async (id) =>
+        returnNullOnError(() => findUnit({ externalId: id, type: UnitType.FACULTY }, ctx))
+      )
     )
   ).filter((unit) => !!unit) as Unit[]
 
@@ -22,12 +24,12 @@ const importSubjects = async (subjects: ParsedSubjectData[], versionId: number, 
   }
 
   for (const subject of subjects) {
-    const unit = units.find((unit) => unit.externalId === subject.unitId)
+    const unit = units.find((unit) => unit.externalId === subject.unitexternalId)
 
     if (!unit) {
       result.skipped.push({
         label: `[SKIP] ${subject.name} (${subject.shortName}, ${subject.externalId})`,
-        error: `No unit found with ${subject.unitId}`,
+        error: `No unit found with ${subject.unitexternalId}`,
       })
       continue
     }

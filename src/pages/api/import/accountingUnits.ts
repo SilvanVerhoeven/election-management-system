@@ -1,10 +1,10 @@
 import { api } from "src/blitz-server"
 import { handleFileUpload } from "../files/upload"
-import importUnits from "../basis/mutations/importUnits"
+import importAccountingUnitMap from "../basis/mutations/importAccountingUnitMap"
 
 /**
- * Import subjects.
- * Request must contain person excel file.
+ * Import accounting units.
+ * Request must contain accounting units excel file.
  * More details: see `handleFileUpload` method.
  */
 const handler = api(async (req, res, ctx) => {
@@ -12,7 +12,7 @@ const handler = api(async (req, res, ctx) => {
     const upload = await handleFileUpload(req, res, ctx)
 
     try {
-      res.status(200).json(await importUnits(upload.id, ctx))
+      res.status(200).json(await importAccountingUnitMap(upload.id, ctx))
     } catch (error) {
       throw {
         statusCode: 400,

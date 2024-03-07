@@ -1,4 +1,5 @@
 import {
+  AccountUnitMap as DbAccountUnitMap,
   CandidateList as DbCandidateList,
   CandidateListPosition as DbCandidateListPosition,
   Site as DbSite,
@@ -6,6 +7,8 @@ import {
   Constituency as DbConstituency,
   Election as DbElection,
   ElectionSet as DbElectionSet,
+  Employment as DbEmployment,
+  Enrolment as DbEnrolment,
   Person as DbPerson,
   PollingStation as DbPollingStation,
   StatusGroup as DbStatusGroup,
@@ -55,6 +58,8 @@ export enum CandidateStatusType {
   REJECTED = "rejected",
 }
 
+export type AccountUnitMap = DbAccountUnitMap
+
 export type CandidateStatus = CandidateStatusType | string | null
 
 export type Version = DbVersion
@@ -73,21 +78,26 @@ export type Data = DbUpload & {
   key?: string
 }
 
-type CandidateBase = DbPerson & {
-  statusGroups: StatusGroup[]
-}
+export type Employment = DbEmployment
 
-export type Student = CandidateBase & {
-  matriculationNumber: string | null
+export type Enrolment = DbEnrolment & {
   subjects: Subject[]
   explicitelyVoteAt: Faculty | null
 }
 
-export type Employee = CandidateBase & {
-  worksAt: Department | null
+export type Person = DbPerson & {
+  statusGroups: StatusGroup[]
+  employments: Employment[]
+  enrolment: Enrolment | null
 }
 
-export type Candidate = Student | Employee
+export type Student = Person & {
+  enrolment: Enrolment
+}
+
+export type Employee = Person & {
+  employments: [Employment, ...Employment[]]
+}
 
 export type Subject = DbSubject & {
   belongsTo: Faculty
@@ -118,12 +128,12 @@ export type PollingStation = DbPollingStation & {
 export type StatusGroup = DbStatusGroup
 
 export type VotingResult = DbVotingResult & {
-  candidate: Candidate
+  candidate: Person
 }
 
 export type CandidateList = DbCandidateList & {
   order: CandidateListOrderType
-  candidates: Candidate[]
+  candidates: Person[]
   candidatesFor: Election
 }
 
@@ -153,7 +163,7 @@ export type Basis = {
 
 export type ListResult = {
   list: CandidateList
-  ranking: (Candidate & { votes: number })[]
+  ranking: (Person & { votes: number })[]
 }
 
 export type ElectionResult = {

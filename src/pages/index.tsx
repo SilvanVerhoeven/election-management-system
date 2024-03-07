@@ -195,9 +195,23 @@ const HomePage: BlitzPage = () => {
               {
                 key: ImportModalUploadFieldType.FACULTY,
                 type: ImportModalUploadFieldType.FACULTY,
-                label: "Fachbereiche/Fakultäten (.csv)",
-                action: "/api/import/units",
+                label: "Fakultäten (.csv)",
+                action: "/api/import/faculties",
                 accept: ".csv",
+              },
+              {
+                key: ImportModalUploadFieldType.DEPARTMENT,
+                type: ImportModalUploadFieldType.DEPARTMENT,
+                label: "Lehr- und Forschungsbereiche (.xlsx)",
+                action: "/api/import/departments",
+                accept: ".xlsx",
+              },
+              {
+                key: ImportModalUploadFieldType.ACCOUNTING_UNIT,
+                type: ImportModalUploadFieldType.ACCOUNTING_UNIT,
+                label: "Kostenstellen (.xlsx)",
+                action: "/api/import/accountingUnits",
+                accept: ".xlsx",
               },
               {
                 key: ImportModalUploadFieldType.SUBJECT,
@@ -210,8 +224,15 @@ const HomePage: BlitzPage = () => {
                 key: ImportModalUploadFieldType.STUDENT,
                 type: ImportModalUploadFieldType.STUDENT,
                 label: "Studierende (.xlsx)",
-                action: "/api/import/persons",
+                action: "/api/import/students",
                 accept: ".xlsx",
+              },
+              {
+                key: ImportModalUploadFieldType.EMPLOYEE,
+                type: ImportModalUploadFieldType.EMPLOYEE,
+                label: "Mitarbeitende (.csv)",
+                action: "/api/import/employees",
+                accept: ".csv",
               },
             ] as (ImportModalUploadField & { key: ImportModalUploadFieldType })[]
           }

@@ -1,16 +1,17 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Candidate } from "src/types"
 import getStatusGroupsForPerson from "./getStatusGroupsForPerson"
-import getSubjectsForPerson from "./getSubjectsForPerson"
+import { Person } from "src/types"
+import findEnrolment from "./findEnrolment"
+import getEmploymentsForPerson from "./getEmploymentsForPerson"
 
 /**
  * Returns the latest version of all persons.
  *
  * @returns All Persons
  */
-export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Candidate[]> => {
+export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Person[]> => {
   const dbPersons = await db.person.findMany({
     distinct: ["globalId"],
     orderBy: {
@@ -22,14 +23,15 @@ export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Candidate[]> => 
 
   return await Promise.all(
     dbPersons.map(async (dbPerson) => {
-      const subjects = await getSubjectsForPerson(dbPerson.globalId, ctx)
       const statusGroups = await getStatusGroupsForPerson(dbPerson.globalId, ctx)
+      const enrolment = await findEnrolment({ personId: dbPerson.globalId }, ctx)
+      const employments = await getEmploymentsForPerson(dbPerson.globalId, ctx)
 
       return {
         ...dbPerson,
         statusGroups,
-        subjects,
-        explicitelyVoteAt: null,
+        enrolment,
+        employments,
       }
     })
   )

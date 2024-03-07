@@ -1,18 +1,15 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import findStatusGroup from "../queries/findStatusGroup"
-import { ParsedStudentData, parsePersonsCSV } from "src/core/lib/parse/persons"
+import { ParsedStudentData, parseStudentsXLSX } from "src/core/lib/parse/persons"
 import createStudent from "./createStudent"
 import findSubject from "../queries/findSubject"
 import { ImportResult, importData, returnNullOnError } from "src/core/lib/import"
 import { Subject } from "src/types"
+import deleteOldEnrolments from "./deleteOldEnrolments"
 
 const importStudents = async (students: ParsedStudentData[], versionId: number, ctx: Ctx) => {
   const studentStatusGroup = await findStatusGroup({ nameOrShortName: "Studierende" }, ctx)
-  // const academicEmployeeStatusGroup = await findStatusGroup(
-  //   { nameOrShortName: "Wissenschaftliche Mitarbeitende" },
-  //   ctx
-  // )
 
   const result: ImportResult = {
     success: 0,
@@ -41,20 +38,31 @@ const importStudents = async (students: ParsedStudentData[], versionId: number, 
       continue
     }
 
-    await createStudent(
-      {
-        firstName: student.firstName,
-        lastName: student.lastName,
-        matriculationNumber: student.matriculationNumber,
-        subjectIds: (subjects as Subject[]).map((subject) => subject.globalId),
-        statusGroupIds: [studentStatusGroup.globalId],
-        versionId,
-      },
-      ctx
-    )
+    try {
+      await createStudent(
+        {
+          externalId: student.externalId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          matriculationNumber: student.matriculationNumber,
+          subjectIds: (subjects as Subject[]).map((subject) => subject.globalId),
+          statusGroupIds: [studentStatusGroup.globalId],
+          // explicitelyVoteAtId: student.explicitelyVoteAtFacultyId // Maybe use later (or not at all)
+          versionId,
+        },
+        ctx
+      )
 
-    result.success++
+      result.success++
+    } catch (error) {
+      result.error.push({
+        label: `[ERR] ${student.firstName} ${student.lastName} (${student.matriculationNumber})`,
+        error: error.toString(),
+      })
+    }
   }
+
+  await deleteOldEnrolments({ versionId }, ctx)
 
   return result
 }
@@ -63,10 +71,5 @@ const importStudents = async (students: ParsedStudentData[], versionId: number, 
  * Imports the election data stored in the upload with the given ID.
  */
 export default resolver.pipe(async (uploadId: number, ctx: Ctx) => {
-  return await importData(
-    uploadId,
-    parsePersonsCSV,
-    (data, versionId, ctx) => importStudents(data.students, versionId, ctx),
-    ctx
-  )
+  return await importData(uploadId, parseStudentsXLSX, importStudents, ctx)
 })

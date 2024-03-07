@@ -1,10 +1,11 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Faculty, UnitType } from "src/types"
+import { Unit, UnitType } from "src/types"
 
-export interface FacultyProps {
-  externalId: number
+export interface UnitProps {
+  type: UnitType
+  externalId: string
   name: string
   shortName?: string
   description?: string
@@ -14,18 +15,18 @@ export interface FacultyProps {
 }
 
 /**
- * Creates a new faculty, unless it matches another faculty completely.
+ * Creates a new unit, unless it matches another unit completely.
  *
- * @returns Newly created or matching faculty in the bare DB form
+ * @returns Newly created or matching unit in the bare DB form
  */
 export default resolver.pipe(
   async (
-    { externalId, name, shortName, description, versionId }: FacultyProps,
+    { type, externalId, name, shortName, description, versionId }: UnitProps,
     ctx: Ctx
-  ): Promise<Faculty> => {
+  ): Promise<Unit> => {
     const match = await db.unit.findFirst({
       where: {
-        type: UnitType.FACULTY,
+        type,
         externalId,
       },
       orderBy: { version: { createdAt: "desc" } },
@@ -41,18 +42,18 @@ export default resolver.pipe(
       if (isCompleteMatch)
         return {
           ...match,
-          type: UnitType.FACULTY,
+          type,
         }
     }
 
-    const newFacultyId = match
+    const newUnitId = match
       ? match.globalId
       : ((await db.unit.findFirst({ orderBy: { globalId: "desc" } }))?.globalId ?? 0) + 1
 
-    const dbFaculty = await db.unit.create({
+    const dbUnit = await db.unit.create({
       data: {
-        type: UnitType.FACULTY,
-        globalId: newFacultyId,
+        type,
+        globalId: newUnitId,
         externalId,
         name,
         shortName: shortName || null,
@@ -64,8 +65,8 @@ export default resolver.pipe(
     })
 
     return {
-      ...dbFaculty,
-      type: UnitType.FACULTY,
+      ...dbUnit,
+      type,
     }
   }
 )

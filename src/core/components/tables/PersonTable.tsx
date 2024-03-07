@@ -1,12 +1,12 @@
 import React from "react"
 import { Table, Tag } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { Candidate } from "src/types"
+import { Person } from "src/types"
 import StatusGroupDisplay from "../displays/StatusGroupDisplay"
 import SubjectDisplay, { getDisplayText } from "../displays/SubjectDisplay"
 
-const PersonTable = ({ data }: { data: Candidate[] }) => {
-  const columns: ColumnsType<Candidate> = [
+const PersonTable = ({ data }: { data: Person[] }) => {
+  const columns: ColumnsType<Person> = [
     {
       title: "Vorname",
       dataIndex: ["firstName"],
@@ -22,7 +22,7 @@ const PersonTable = ({ data }: { data: Candidate[] }) => {
     },
     {
       title: "Statusgruppe",
-      render: (person: Candidate) =>
+      render: (person: Person) =>
         person.statusGroups.map((sg) => (
           <Tag key={sg.globalId}>
             <StatusGroupDisplay statusGroup={sg} />
@@ -32,18 +32,21 @@ const PersonTable = ({ data }: { data: Candidate[] }) => {
     {
       title: "Studiengang",
       width: 200,
-      render: (person: Candidate) => (
-        <SubjectDisplay subjects={"subjects" in person ? person.subjects : undefined} />
+      render: (person: Person) => (
+        <SubjectDisplay subjects={!!person.enrolment ? person.enrolment.subjects : undefined} />
       ),
       sorter: (a, b) =>
-        ("subjects" in a ? getDisplayText(a.subjects) : "").localeCompare(
-          "subjects" in b ? getDisplayText(b.subjects) : ""
+        (!!a.enrolment ? getDisplayText(a.enrolment.subjects) : "").localeCompare(
+          !!b.enrolment ? getDisplayText(b.enrolment.subjects) : ""
         ),
     },
     {
       title: "Matrikelnummer",
-      dataIndex: ["matriculationNumber"],
-      sorter: (a, b) => (a.matriculationNumber ?? "").localeCompare(a.matriculationNumber ?? ""),
+      dataIndex: ["enrolment", "matriculationNumber"],
+      sorter: (a, b) =>
+        (a.enrolment?.matriculationNumber ?? "").localeCompare(
+          b.enrolment?.matriculationNumber ?? ""
+        ),
     },
     {
       title: "E-Mail",

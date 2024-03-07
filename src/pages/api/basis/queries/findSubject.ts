@@ -2,7 +2,7 @@ import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
 import { Faculty, Subject } from "src/types"
-import findUnit from "./findUnit"
+import getUnit from "./getUnit"
 
 export type FindSubjectProps = (
   | {
@@ -34,7 +34,7 @@ export default resolver.pipe(async (props: FindSubjectProps, ctx: Ctx): Promise<
     orderBy: { version: { createdAt: "desc" } },
   })
 
-  const faculty = (await findUnit({ externalId: dbSubject.belongsToId }, ctx)) as Faculty
+  const faculty = (await getUnit({ globalId: dbSubject.belongsToId }, ctx)) as Faculty
 
   return {
     ...dbSubject,

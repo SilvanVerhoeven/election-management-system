@@ -1,8 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Subject } from "src/types"
-import getFaculty from "./getFaculty"
+import { Faculty, Subject } from "src/types"
+import getUnit from "./getUnit"
 
 export interface GetSubjectProps {
   globalId: number
@@ -26,7 +26,7 @@ export default resolver.pipe(
       orderBy: { version: { createdAt: "desc" } },
     })
 
-    const faculty = await getFaculty({ globalId: subject.belongsToId }, ctx)
+    const faculty = (await getUnit({ globalId: subject.belongsToId }, ctx)) as Faculty
 
     return {
       ...subject,

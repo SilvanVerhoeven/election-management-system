@@ -1,10 +1,11 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
-import { ParsedUnitData, parseUnitsCSV } from "src/core/lib/parse/units"
+import { ParsedUnitData, parseFacultyCSV } from "src/core/lib/parse/units"
 import { ImportResult, importData } from "src/core/lib/import"
-import createFaculty from "./createFaculty"
+import createUnit from "./createUnit"
+import { UnitType } from "src/types"
 
-const importUnits = async (units: ParsedUnitData[], versionId: number, ctx: Ctx) => {
+const importFaculties = async (units: ParsedUnitData[], versionId: number, ctx: Ctx) => {
   const result: ImportResult = {
     success: 0,
     skipped: [],
@@ -13,8 +14,9 @@ const importUnits = async (units: ParsedUnitData[], versionId: number, ctx: Ctx)
 
   for (const unit of units) {
     try {
-      await createFaculty(
+      await createUnit(
         {
+          type: UnitType.FACULTY,
           externalId: unit.externalId,
           name: unit.name,
           shortName: unit.shortName,
@@ -40,5 +42,5 @@ const importUnits = async (units: ParsedUnitData[], versionId: number, ctx: Ctx)
  * Imports the election data stored in the upload with the given ID.
  */
 export default resolver.pipe(async (uploadId: number, ctx: Ctx) => {
-  return importData(uploadId, parseUnitsCSV, importUnits, ctx)
+  return importData(uploadId, parseFacultyCSV, importFaculties, ctx)
 })

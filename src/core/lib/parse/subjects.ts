@@ -4,7 +4,7 @@ export type ParsedSubjectData = {
   externalId: number
   name: string
   shortName: string
-  unitId: number
+  unitexternalId: string // Unit externalId
 }
 
 const parseSubjects = (sheet: Worksheet): ParsedSubjectData[] => {
@@ -16,7 +16,7 @@ const parseSubjects = (sheet: Worksheet): ParsedSubjectData[] => {
         externalId: row.getCell(1).value?.valueOf() as number,
         shortName: row.getCell(2).text,
         name: row.getCell(4).text,
-        unitId: row.getCell(5).value?.valueOf() as number,
+        unitexternalId: row.getCell(5).text,
       }
     })
 }

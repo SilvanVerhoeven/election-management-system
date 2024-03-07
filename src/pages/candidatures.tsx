@@ -23,7 +23,7 @@ import { UploadChangeParam } from "antd/es/upload"
 import PersonTable from "src/core/components/tables/PersonTable"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import getPersons from "./api/basis/queries/getPersons"
-import { Candidate, CandidateList, CandidateListOrderType } from "src/types"
+import { Person, CandidateList, CandidateListOrderType } from "src/types"
 import getElectionsInSet from "./api/basis/queries/getElectionsInSet"
 import getLatestElectionSet from "./api/basis/queries/getLatestElectionSet"
 import { fullName } from "src/core/lib/person"
@@ -58,7 +58,7 @@ const CandidaturesPage: BlitzPage = () => {
   const [initialPersons, { refetch: refetchPersons }] = useQuery(getPersons, null, {
     refetchOnWindowFocus: false,
   })
-  const [persons, setPersons] = useState<Candidate[] | null>()
+  const [persons, setPersons] = useState<Person[] | null>()
 
   const updatePersons = useCallback(async () => {
     setIsUpdatingPersons(true)
@@ -223,7 +223,7 @@ const CandidaturesPage: BlitzPage = () => {
     if (!person) return false
     return (
       fullName(person).toLowerCase().includes(lowerCaseInput) ||
-      !!person.matriculationNumber?.toLowerCase().includes(lowerCaseInput)
+      !!person.enrolment?.matriculationNumber?.toLowerCase().includes(lowerCaseInput)
     )
   }
 
@@ -236,14 +236,15 @@ const CandidaturesPage: BlitzPage = () => {
           Neue Liste
         </Button>
         <UploadComponent
-          action="/api/import/persons"
+          disabled
+          action="/api/import/students"
           maxCount={1}
           showUploadList={false}
           onChange={handleFileChange}
           customRequest={(options) => uploadFile(options, "persons")}
           accept=".csv"
         >
-          <Button icon={<UploadOutlined />} loading={isUploading || isUpdatingPersons}>
+          <Button disabled icon={<UploadOutlined />} loading={isUploading || isUpdatingPersons}>
             Personen importieren
           </Button>
         </UploadComponent>
@@ -313,7 +314,9 @@ const CandidaturesPage: BlitzPage = () => {
                 return {
                   value: person.globalId,
                   label: `${fullName(person)} (${
-                    person.matriculationNumber ? person.matriculationNumber : "Mitarbeiter:in"
+                    person.enrolment && person.enrolment.matriculationNumber
+                      ? person.enrolment.matriculationNumber
+                      : "Mitarbeiter:in"
                   })`,
                 }
               })}

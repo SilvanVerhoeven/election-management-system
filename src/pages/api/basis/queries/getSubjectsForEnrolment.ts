@@ -5,15 +5,15 @@ import { Subject } from "src/types"
 import getSubject from "./getSubject"
 
 /**
- * Returns the latest version of subjects the person with the given globalId is member of.
+ * Returns the latest version of subjects the person with the given global enrolment ID.
  *
- * @returns Subjects of given person
+ * @returns Subjects related to given enrolment ID
  */
-export default resolver.pipe(async (personGlobalId: number, ctx: Ctx): Promise<Subject[]> => {
+export default resolver.pipe(async (enrolmentGlobalId: number, ctx: Ctx): Promise<Subject[]> => {
   const dbConnections = await db.subjectOccupancy.findMany({
     distinct: ["subjectId"],
     where: {
-      personId: personGlobalId,
+      enrolmentId: enrolmentGlobalId,
     },
     orderBy: { version: { createdAt: "desc" } },
   })

@@ -69,6 +69,7 @@ model Token {
 
 model Person {
   globalId               Int
+  externalId             String // hash identifying same natural person when they have multiple employments and are also students
   firstName              String
   lastName               String
   email                  String?
@@ -76,18 +77,41 @@ model Person {
   comment                String?
   electabilityVerifiedOn DateTime?
   isElectionHelper       Boolean?
-  matriculationNumber    String? // only students
   createdAt              DateTime  @default(now())
-  explicitelyVoteAtId    Int? // Unit globalId
-  worksAtId              Int? // Unit globalId
   version                Version   @relation(fields: [versionId], references: [id])
   versionId              Int
 
   // REFERENCED BY
+  // Employment
+  // Enrolment
   // VotingResult
   // CandidateListPosition
   // StatusGroupMembership
-  // SubjectOccupancy
+
+  @@id([globalId, versionId])
+}
+
+model Employment {
+  globalId         Int
+  personId         Int // Person globalId
+  position         String
+  accountingUnitId String
+  employedAtId     Int // Unit globalId
+  deleted          Boolean
+  version          Version @relation(fields: [versionId], references: [id])
+  versionId        Int
+
+  @@id([globalId, versionId])
+}
+
+model Enrolment {
+  globalId            Int
+  personId            Int // Person globalId, optional 1:1 relation
+  matriculationNumber String // only students
+  explicitelyVoteAtId Int? // Unit globalId
+  deleted             Boolean
+  version             Version @relation(fields: [versionId], references: [id])
+  versionId           Int
 
   @@id([globalId, versionId])
 }
@@ -108,13 +132,13 @@ model Subject {
 }
 
 model SubjectOccupancy {
-  personId  Int // Person globalId
-  subjectId Int // Subject globalId
-  deleted   Boolean @default(false)
-  version   Version @relation(fields: [versionId], references: [id])
-  versionId Int
+  enrolmentId Int // Enrolment globalId
+  subjectId   Int // Subject globalId
+  deleted     Boolean @default(false)
+  version     Version @relation(fields: [versionId], references: [id])
+  versionId   Int
 
-  @@id([personId, subjectId, deleted])
+  @@id([enrolmentId, subjectId, deleted])
 }
 
 model Site {
@@ -150,7 +174,7 @@ model Constituency {
 
 model Unit {
   globalId         Int
-  externalId       Int
+  externalId       String // Faculty ID or Department ID
   type             String //ENUM: faculty/department
   name             String
   shortName        String?
@@ -165,6 +189,14 @@ model Unit {
   // Person
 
   @@id([globalId, versionId])
+}
+
+// Used on employee import to map Employment's accountingUnitId to Unit
+model AccountUnitMap {
+  accountingUnitId String
+  unitId           Int // Unit globalId
+
+  @@id([accountingUnitId, unitId])
 }
 
 model PollingStation {
@@ -327,6 +359,8 @@ model Version {
   StatusGroupMembership   StatusGroupMembership[]
   Upload                  Upload?
   SubjectOccupancy        SubjectOccupancy[]
+  Employment              Employment[]
+  Enrolment               Enrolment[]
 }
 
 model Upload {

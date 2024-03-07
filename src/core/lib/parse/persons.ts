@@ -1,41 +1,38 @@
 import Excel, { Worksheet } from "exceljs"
+import { Readable } from "stream"
 
 export type ParsedStudentData = {
+  externalId: string
   firstName: string
   lastName: string
   matriculationNumber: string
-  explicitelyVoteAtFacultyId: number
+  explicitelyVoteAtFacultyId: number // Unit externalId (faculty)
   subjectsShortName: string[]
-  // isOnlyStudent: boolean // Phd students are not only students and may count to other status groups as well
-}
-
-export type ParsedPersonData = {
-  students: ParsedStudentData[]
 }
 
 const parseStudents = (sheet: Worksheet): ParsedStudentData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows.map((row) => {
     return {
-      matriculationNumber: row.getCell(2).text,
-      lastName: row.getCell(3).text,
-      firstName: row.getCell(4).text,
-      explicitelyVoteAtFacultyId: row.getCell(6).value?.valueOf() as number,
-      subjectsShortName: [row.getCell(7).text, row.getCell(9).text, row.getCell(11).text].filter(
+      externalId: row.getCell(2).text,
+      matriculationNumber: row.getCell(3).text,
+      lastName: row.getCell(4).text,
+      firstName: row.getCell(5).text,
+      explicitelyVoteAtFacultyId: row.getCell(7).value?.valueOf() as number,
+      subjectsShortName: [row.getCell(8).text, row.getCell(10).text, row.getCell(12).text].filter(
         (shortName) => shortName !== "" && shortName !== " "
       ),
-      // isOnlyStudent: row.getCell(5).text == "0",
     }
   })
 }
 
 /**
- * Parse CSV document with persons.
+ * Parse XLSX document with students.
  *
- * @param buffer CSV document as buffer
+ * @param buffer XLSX document as buffer
  * @returns Persons
  */
-export const parsePersonsCSV = async (buffer: Buffer): Promise<ParsedPersonData> => {
+export const parseStudentsXLSX = async (buffer: Buffer): Promise<ParsedStudentData[]> => {
   const workbook = new Excel.Workbook()
   await workbook.xlsx.load(buffer)
 
@@ -43,7 +40,50 @@ export const parsePersonsCSV = async (buffer: Buffer): Promise<ParsedPersonData>
 
   if (!studentsSheet) throw new Error("Could not read XLSX file")
 
-  return {
-    students: parseStudents(studentsSheet),
-  }
+  return parseStudents(studentsSheet)
+}
+
+export type ParsedEmployeeData = {
+  externalId: string
+  firstName: string
+  lastName: string
+  accountingId1: string // we are given two different accounting IDs. They should always match. If not, the employee should not be parsed and the user should be informed
+  accountingId2: string
+  position: string
+}
+
+const parseEmployees = (sheet: Worksheet): ParsedEmployeeData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows.map((row) => {
+    return {
+      externalId: row.getCell(1).text,
+      firstName: row.getCell(4).text,
+      lastName: row.getCell(5).text,
+      accountingId1: row.getCell(6).text,
+      accountingId2: row.getCell(7).text,
+      position: row.getCell(8).text,
+    }
+  })
+}
+
+/**
+ * Parse CSV document with employees.
+ *
+ * @param buffer CSV document as buffer
+ * @returns Persons
+ */
+export const parseEmployeesCSV = async (buffer: Buffer): Promise<ParsedEmployeeData[]> => {
+  const workbook = new Excel.Workbook()
+  await workbook.csv.read(Readable.from(buffer), {
+    parserOptions: {
+      delimiter: ";",
+      encoding: "utf8",
+    },
+  })
+
+  const employeesSheet = workbook.worksheets[0]
+
+  if (!employeesSheet) throw new Error("Could not read CSV file")
+
+  return parseEmployees(employeesSheet)
 }

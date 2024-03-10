@@ -1,8 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Enrolment, Faculty } from "src/types"
-import { haveEqualValues } from "src/core/lib/array"
+import { Enrolment, Faculty, SubjectOccupancy } from "src/types"
+import { areIdentical } from "src/core/lib/array"
 import findEnrolment from "../queries/findEnrolment"
 import getSubjectsForEnrolment from "../queries/getSubjectsForEnrolment"
 import getUnit from "../queries/getUnit"
@@ -11,61 +11,79 @@ export interface EnrolmentProps {
   personId: number
   matriculationNumber: string
   explicitelyVoteAtId?: number | null
-  subjectIds: number[]
+  subjectIds: number[] // assumption: order in subject priority
   deleted?: boolean
   versionId: number
 }
 
 const setSubjectOccupenciesAsDeleted = async (
   enrolmentGlobalId: number,
-  subjectIds: number[],
+  newSubjectIds: number[],
   versionId: number
 ) => {
   const entriesToDelete = await db.subjectOccupancy.findMany({
+    distinct: ["subjectId"],
     where: {
       enrolmentId: enrolmentGlobalId,
-      subjectId: { notIn: subjectIds },
-      deleted: false,
+      subjectId: { notIn: newSubjectIds },
     },
+    orderBy: { version: { createdAt: "desc" } },
   })
   try {
     await Promise.all(
-      entriesToDelete.map(async (entry) => {
-        await db.subjectOccupancy.create({
-          data: {
-            enrolmentId: enrolmentGlobalId,
-            subjectId: entry.subjectId,
-            deleted: true,
-            version: { connect: { id: versionId } },
-          },
+      entriesToDelete
+        .filter((entry) => !entry.deleted)
+        .map(async (occupency) => {
+          await db.subjectOccupancy.create({
+            data: {
+              enrolmentId: enrolmentGlobalId,
+              subjectId: occupency.subjectId,
+              priority: occupency.priority,
+              deleted: true,
+              version: { connect: { id: versionId } },
+            },
+          })
         })
-      })
     )
   } catch (error) {
-    throw new Error(`DEL ${enrolmentGlobalId} - ${JSON.stringify(subjectIds)} - ${versionId}`)
+    throw new Error(
+      `Failed to delete some of the subjects ${JSON.stringify(
+        entriesToDelete
+      )} from enrolment ${enrolmentGlobalId} (subjects: ${JSON.stringify(
+        newSubjectIds
+      )}). Version: ${versionId}. Error: ${error.message}`
+    )
   }
 }
 
 const createNewSubjectOccupencies = async (
   enrolmentGlobalId: number,
-  subjectIds: number[],
+  currentOccupencies: SubjectOccupancy[],
+  newSubjectIds: number[],
   versionId: number
 ) => {
+  const entriesNecessaryToCreate = newSubjectIds
+    .map((subjectId, priority) => {
+      return {
+        subjectId,
+        priority,
+      }
+    })
+    .filter(
+      (entry) =>
+        currentOccupencies.findIndex(
+          (co) => co.subjectId == entry.subjectId && co.priority == entry.priority
+        ) == -1
+    )
+
   try {
     await Promise.all(
-      subjectIds.map(async (subjectId) => {
-        await db.subjectOccupancy.upsert({
-          where: {
-            enrolmentId_subjectId_deleted: {
-              enrolmentId: enrolmentGlobalId,
-              subjectId,
-              deleted: false,
-            },
-          },
-          update: {},
-          create: {
+      entriesNecessaryToCreate.map(async (entry) => {
+        await db.subjectOccupancy.create({
+          data: {
             enrolmentId: enrolmentGlobalId,
-            subjectId,
+            subjectId: entry.subjectId,
+            priority: entry.priority,
             deleted: false,
             version: { connect: { id: versionId } },
           },
@@ -73,24 +91,43 @@ const createNewSubjectOccupencies = async (
       })
     )
   } catch (error) {
-    throw new Error(`NEW ${enrolmentGlobalId} - ${JSON.stringify(subjectIds)} - ${versionId}`)
+    throw new Error(
+      `Failed to create some of the subjects ${JSON.stringify(
+        entriesNecessaryToCreate
+      )} for enrolment ${enrolmentGlobalId} (subjects: ${JSON.stringify(
+        newSubjectIds
+      )}). Version: ${versionId}. Error: ${error.message}`
+    )
   }
 }
 
 const updateSubjectOccupencies = async (
   enrolmentGlobalId: number,
-  subjectIds: number[],
+  newSubjectIds: number[],
   versionId: number
 ) => {
-  await setSubjectOccupenciesAsDeleted(enrolmentGlobalId, subjectIds, versionId)
-  await createNewSubjectOccupencies(enrolmentGlobalId, subjectIds, versionId)
+  const currentOccupencies = (
+    await db.subjectOccupancy.findMany({
+      distinct: ["subjectId"],
+      where: { enrolmentId: enrolmentGlobalId },
+      orderBy: { version: { createdAt: "desc" } },
+    })
+  ).filter((occupency) => !occupency.deleted)
+
+  await setSubjectOccupenciesAsDeleted(enrolmentGlobalId, newSubjectIds, versionId)
+  await createNewSubjectOccupencies(enrolmentGlobalId, currentOccupencies, newSubjectIds, versionId)
 }
 
-const updateReferences = async (personGlobalId: number, versionId: number, subjectIds: number[]) =>
-  Promise.all([updateSubjectOccupencies(personGlobalId, subjectIds, versionId)])
+const updateReferences = async (
+  enrolmentGlobalId: number,
+  versionId: number,
+  newSubjectIds: number[]
+) => Promise.all([updateSubjectOccupencies(enrolmentGlobalId, newSubjectIds, versionId)])
 
 /**
  * Creates a new enrolment, unless it matches another enrolment completely.
+ *
+ * @param subjecIds Must be ordered in subject priority (first is most important)
  *
  * @returns Newly created or matching enrolment
  */
@@ -117,12 +154,12 @@ export default resolver.pipe(
 
     const isReferenceMatch =
       match &&
-      haveEqualValues(
+      areIdentical(
         match.subjects.map((s) => s.globalId),
         subjectIds ?? []
       )
 
-    if (isLocalMatch && !isReferenceMatch) {
+    if (isLocalMatch && !match.deleted && !isReferenceMatch) {
       await updateReferences(match.globalId, versionId, subjectIds)
     }
 

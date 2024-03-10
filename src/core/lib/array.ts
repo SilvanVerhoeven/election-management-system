@@ -9,6 +9,15 @@ export const haveEqualValues = <T>(a: T[], b: T[]) =>
   a.concat().sort().join(",") == b.concat().sort().join(",")
 
 /**
+ * Check whether two arrays have the same values in the same order.
+ *
+ * @param a Array 1
+ * @param b Array 2
+ * @returns True if both arrays have the same values in the same order
+ */
+export const areIdentical = <T>(a: T[], b: T[]) => a.join(",") == b.join(",")
+
+/**
  * Helper for `Array.filter` that allows to filter out all unique values of the filtered array.
  *
  * Usage example:

@@ -167,7 +167,7 @@ const HomePage: BlitzPage = () => {
         ]}
       >
         <Text>
-          Der erstmalige Import von Daten sollten in der untenstehenden Reihenfolge erfolgen.
+          Der erstmalige Import von Daten sollte in der untenstehenden Reihenfolge erfolgen.
         </Text>
 
         <Title level={5}>Basisdaten</Title>

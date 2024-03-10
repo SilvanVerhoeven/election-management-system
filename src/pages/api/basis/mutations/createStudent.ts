@@ -15,7 +15,7 @@ export default resolver.pipe(
   async (
     {
       matriculationNumber,
-      subjectIds,
+      subjectIds, // assumption: order in subject priority
       explicitelyVoteAtId,
       versionId,
       ...personProps

@@ -7,7 +7,7 @@ export type ParsedStudentData = {
   lastName: string
   matriculationNumber: string
   explicitelyVoteAtFacultyId: number // Unit externalId (faculty)
-  subjectsShortName: string[]
+  subjectsShortName: string[] // assumption: Order in subject priority
 }
 
 const parseStudents = (sheet: Worksheet): ParsedStudentData[] => {

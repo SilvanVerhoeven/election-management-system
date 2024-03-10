@@ -32,3 +32,10 @@ export const fullNameLastFirst = (person: Person) => `${person.lastName}, ${pers
  */
 export const activeStatusGroup = (person: Person): StatusGroup | undefined =>
   person.statusGroups.concat().sort((a, b) => b.priority - a.priority)[0]
+
+/**
+ * Predicate to test whether the given status group is the student status group.
+ */
+export const isStudentStatusGroup = (statusGroup: StatusGroup): boolean =>
+  statusGroup.shortName == process.env.STATUS_GROUP_NAME_STUDENTS ||
+  statusGroup.name == process.env.STATUS_GROUP_NAME_STUDENTS

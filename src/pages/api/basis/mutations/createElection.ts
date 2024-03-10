@@ -19,24 +19,38 @@ const setStatusGroupEligibilitiesAsDeleted = async (
   versionId: number
 ) => {
   const entriesToDelete = await db.statusGroupEligibility.findMany({
+    distinct: ["statusGroupId"],
     where: {
-      electionId,
+      electionId: electionId,
       statusGroupId: { notIn: eligibleStatusGroupIds },
-      deleted: false,
     },
+    orderBy: { version: { createdAt: "desc" } },
   })
-  await Promise.all(
-    entriesToDelete.map(async (entry) => {
-      await db.statusGroupEligibility.create({
-        data: {
-          electionId,
-          statusGroupId: entry.statusGroupId,
-          deleted: true,
-          version: { connect: { id: versionId } },
-        },
-      })
-    })
-  )
+
+  try {
+    await Promise.all(
+      entriesToDelete
+        .filter((entry) => !entry.deleted)
+        .map(async (entry) => {
+          await db.statusGroupEligibility.create({
+            data: {
+              electionId,
+              statusGroupId: entry.statusGroupId,
+              deleted: true,
+              version: { connect: { id: versionId } },
+            },
+          })
+        })
+    )
+  } catch (error) {
+    throw new Error(
+      `Failed to delete some of the status groups ${JSON.stringify(
+        entriesToDelete
+      )} from election ${electionId} (status groups: ${JSON.stringify(
+        eligibleStatusGroupIds
+      )}). Version: ${versionId}. Error: ${error.message}`
+    )
+  }
 }
 
 const createNewStatusGroupEligibilities = async (
@@ -44,14 +58,24 @@ const createNewStatusGroupEligibilities = async (
   eligibleStatusGroupIds: number[],
   versionId: number
 ) => {
+  const currentEntries = await db.statusGroupEligibility.findMany({
+    distinct: ["statusGroupId"],
+    where: {
+      electionId,
+      statusGroupId: { in: eligibleStatusGroupIds },
+    },
+    orderBy: { version: { createdAt: "desc" } },
+  })
+
+  const entriesNecessaryToCreate = eligibleStatusGroupIds.filter((statusGroupId) => {
+    const match = currentEntries.filter((entry) => entry.statusGroupId == statusGroupId)
+    return match.length == 0 || match[0]?.deleted
+  })
+
   await Promise.all(
-    eligibleStatusGroupIds.map(async (statusGroupId) => {
-      await db.statusGroupEligibility.upsert({
-        where: {
-          electionId_statusGroupId_deleted: { electionId, statusGroupId, deleted: false },
-        },
-        update: {},
-        create: {
+    entriesNecessaryToCreate.map(async (statusGroupId) => {
+      await db.statusGroupEligibility.create({
+        data: {
           electionId,
           statusGroupId,
           version: { connect: { id: versionId } },
@@ -67,25 +91,37 @@ const setConstituencyEligibilitiesAsDeleted = async (
   versionId: number
 ) => {
   const entriesToDelete = await db.constituencyEligibility.findMany({
+    distinct: ["constituencyId"],
     where: {
       electionId,
       constituencyId: { notIn: eligibleConstituencyIds },
-      deleted: false,
     },
+    orderBy: { version: { createdAt: "desc" } },
   })
-  await Promise.all(
-    entriesToDelete.map(
-      async (entry) =>
-        await db.constituencyEligibility.create({
-          data: {
-            electionId,
-            constituencyId: entry.constituencyId,
-            deleted: true,
-            version: { connect: { id: versionId } },
-          },
+  try {
+    await Promise.all(
+      entriesToDelete
+        .filter((entry) => !entry.deleted)
+        .map(async (entry) => {
+          await db.constituencyEligibility.create({
+            data: {
+              electionId,
+              constituencyId: entry.constituencyId,
+              deleted: true,
+              version: { connect: { id: versionId } },
+            },
+          })
         })
     )
-  )
+  } catch (error) {
+    throw new Error(
+      `Failed to delete some of the constituencies ${JSON.stringify(
+        entriesToDelete
+      )} from election ${electionId} (constituencies: ${JSON.stringify(
+        eligibleConstituencyIds
+      )}). Version: ${versionId}. Error: ${error.message}`
+    )
+  }
 }
 
 const createNewConstituencyEligibilities = async (
@@ -93,21 +129,30 @@ const createNewConstituencyEligibilities = async (
   eligibleConstituencyIds: number[],
   versionId: number
 ) => {
+  const currentEntries = await db.constituencyEligibility.findMany({
+    distinct: ["constituencyId"],
+    where: {
+      electionId,
+      constituencyId: { in: eligibleConstituencyIds },
+    },
+    orderBy: { version: { createdAt: "desc" } },
+  })
+
+  const entriesNecessaryToCreate = eligibleConstituencyIds.filter((constituencyId) => {
+    const match = currentEntries.filter((entry) => entry.constituencyId == constituencyId)
+    return match.length == 0 || match[0]?.deleted
+  })
+
   await Promise.all(
-    eligibleConstituencyIds.map(
-      async (constituencyId) =>
-        await db.constituencyEligibility.upsert({
-          where: {
-            electionId_constituencyId_deleted: { electionId, constituencyId, deleted: false },
-          },
-          update: {},
-          create: {
-            electionId,
-            constituencyId,
-            version: { connect: { id: versionId } },
-          },
-        })
-    )
+    entriesNecessaryToCreate.map(async (constituencyId) => {
+      await db.constituencyEligibility.create({
+        data: {
+          electionId,
+          constituencyId,
+          version: { connect: { id: versionId } },
+        },
+      })
+    })
   )
 }
 

@@ -18,6 +18,8 @@ export default resolver.pipe(async (enrolmentGlobalId: number, ctx: Ctx): Promis
     orderBy: { version: { createdAt: "desc" } },
   })
 
+  dbConnections.sort((a, b) => a.priority - b.priority)
+
   return await Promise.all(
     dbConnections
       .filter((connection) => !connection.deleted)

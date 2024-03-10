@@ -9,7 +9,10 @@ import { Subject } from "src/types"
 import deleteOldEnrolments from "./deleteOldEnrolments"
 
 const importStudents = async (students: ParsedStudentData[], versionId: number, ctx: Ctx) => {
-  const studentStatusGroup = await findStatusGroup({ nameOrShortName: "Studierende" }, ctx)
+  const studentStatusGroup = await findStatusGroup(
+    { nameOrShortName: process.env.STATUS_GROUP_NAME_STUDENTS ?? "" },
+    ctx
+  )
 
   const result: ImportResult = {
     success: 0,
@@ -20,10 +23,15 @@ const importStudents = async (students: ParsedStudentData[], versionId: number, 
   for (const student of students) {
     // const faculty = await findUnit({ externalId: student.explicitelyVoteAtFacultyId }, ctx)
     const subjects = await Promise.all(
-      student.subjectsShortName.map((shortName) =>
-        returnNullOnError(() => findSubject({ shortName }, ctx))
-      )
+      student.subjectsShortName.map(async (shortName, index) => {
+        return {
+          priority: index,
+          subject: await returnNullOnError(() => findSubject({ shortName }, ctx)),
+        }
+      })
     )
+
+    subjects.sort((a, b) => a.priority - b.priority) // ensure correct priority order
 
     if (subjects.findIndex((subject) => subject === null) > -1) {
       result.skipped.push({
@@ -45,7 +53,9 @@ const importStudents = async (students: ParsedStudentData[], versionId: number, 
           firstName: student.firstName,
           lastName: student.lastName,
           matriculationNumber: student.matriculationNumber,
-          subjectIds: (subjects as Subject[]).map((subject) => subject.globalId),
+          subjectIds: (subjects.map((entry) => entry.subject) as Subject[]).map(
+            (subject) => subject.globalId
+          ),
           statusGroupIds: [studentStatusGroup.globalId],
           // explicitelyVoteAtId: student.explicitelyVoteAtFacultyId // Maybe use later (or not at all)
           versionId,

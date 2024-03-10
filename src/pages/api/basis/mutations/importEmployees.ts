@@ -32,20 +32,28 @@ const importEmployees = async (employees: ParsedEmployeeData[], versionId: numbe
       continue
     }
 
-    await createEmployee(
-      {
-        firstName: employee.firstName,
-        lastName: employee.lastName,
-        accountingUnitId: employee.accountingId1,
-        employedAtId: unitMap.unitId,
-        externalId: employee.externalId,
-        position: employee.position,
-        versionId,
-      },
-      ctx
-    )
+    try {
+      await createEmployee(
+        {
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+          accountingUnitId: employee.accountingId1,
+          employedAtId: unitMap.unitId,
+          externalId: employee.externalId,
+          position: employee.position,
+          versionId,
+        },
+        ctx
+      )
 
-    result.success++
+      result.success++
+    } catch (error) {
+      result.error.push({
+        label: `[ERR] ${employee.firstName} ${employee.lastName} (${employee.externalId})`,
+        error: `External ID duplicate '${employee.externalId}' with different user data`,
+      })
+      continue
+    }
   }
 
   await deleteOldEmployments({ versionId }, ctx)

@@ -20,6 +20,7 @@ export interface FindPersonProps {
 export default resolver.pipe(
   async ({ externalId, versionId }: FindPersonProps, ctx: Ctx): Promise<Person | null> => {
     const match = await db.person.findFirst({
+      distinct: ["globalId"],
       where: {
         externalId,
         versionId,

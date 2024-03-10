@@ -27,24 +27,37 @@ const setStatusGroupMembershipsAsDeleted = async (
   versionId: number
 ) => {
   const entriesToDelete = await db.statusGroupMembership.findMany({
+    distinct: ["statusGroupId"],
     where: {
       personId,
       statusGroupId: { notIn: statusGroupIds },
-      deleted: false,
     },
+    orderBy: { version: { createdAt: "desc" } },
   })
-  await Promise.all(
-    entriesToDelete.map(async (entry) => {
-      await db.statusGroupMembership.create({
-        data: {
-          personId,
-          statusGroupId: entry.statusGroupId,
-          deleted: true,
-          version: { connect: { id: versionId } },
-        },
-      })
-    })
-  )
+  try {
+    await Promise.all(
+      entriesToDelete
+        .filter((entry) => !entry.deleted)
+        .map(async (entry) => {
+          await db.statusGroupMembership.create({
+            data: {
+              personId,
+              statusGroupId: entry.statusGroupId,
+              deleted: true,
+              version: { connect: { id: versionId } },
+            },
+          })
+        })
+    )
+  } catch (error) {
+    throw new Error(
+      `Failed to delete some of the status group memberships ${JSON.stringify(
+        entriesToDelete
+      )} from person ${personId} (status groups: ${JSON.stringify(
+        statusGroupIds
+      )}). Version: ${versionId}. Error: ${error.message}`
+    )
+  }
 }
 
 const createNewStatusGroupMemberships = async (
@@ -52,14 +65,24 @@ const createNewStatusGroupMemberships = async (
   statusGroupIds: number[],
   versionId: number
 ) => {
+  const currentEntries = await db.statusGroupMembership.findMany({
+    distinct: ["statusGroupId"],
+    where: {
+      personId,
+      statusGroupId: { in: statusGroupIds },
+    },
+    orderBy: { version: { createdAt: "desc" } },
+  })
+
+  const entriesNecessaryToCreate = statusGroupIds.filter((statusGroupId) => {
+    const match = currentEntries.filter((entry) => entry.statusGroupId == statusGroupId)
+    return match.length == 0 || match[0]?.deleted
+  })
+
   await Promise.all(
-    statusGroupIds.map(async (statusGroupId) => {
-      await db.statusGroupMembership.upsert({
-        where: {
-          personId_statusGroupId_deleted: { personId, statusGroupId, deleted: false },
-        },
-        update: {},
-        create: {
+    entriesNecessaryToCreate.map(async (statusGroupId) => {
+      await db.statusGroupMembership.create({
+        data: {
           personId,
           statusGroupId,
           deleted: false,
@@ -120,6 +143,7 @@ export default resolver.pipe(
 
     const isLocalMatch =
       match &&
+      match.externalId == externalId &&
       match.firstName == firstName &&
       match.lastName == lastName &&
       match.comment == (comment ?? null) &&

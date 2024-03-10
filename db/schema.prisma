@@ -134,11 +134,12 @@ model Subject {
 model SubjectOccupancy {
   enrolmentId Int // Enrolment globalId
   subjectId   Int // Subject globalId
+  priority    Int // Determines order of multiple enrolled subjects, 0 is highest priority
   deleted     Boolean @default(false)
   version     Version @relation(fields: [versionId], references: [id])
   versionId   Int
 
-  @@id([enrolmentId, subjectId, deleted])
+  @@id([enrolmentId, subjectId, deleted, versionId])
 }
 
 model Site {
@@ -271,7 +272,7 @@ model StatusGroupMembership {
   version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
 
-  @@id([personId, statusGroupId, deleted])
+  @@id([personId, statusGroupId, deleted, versionId])
 }
 
 model StatusGroupEligibility {
@@ -281,7 +282,7 @@ model StatusGroupEligibility {
   version       Version @relation(fields: [versionId], references: [id])
   versionId     Int
 
-  @@id([electionId, statusGroupId, deleted])
+  @@id([electionId, statusGroupId, deleted, versionId])
 }
 
 model ConstituencyEligibility {
@@ -291,7 +292,7 @@ model ConstituencyEligibility {
   version        Version @relation(fields: [versionId], references: [id])
   versionId      Int
 
-  @@id([electionId, constituencyId, deleted])
+  @@id([electionId, constituencyId, deleted, versionId])
 }
 
 model Election {

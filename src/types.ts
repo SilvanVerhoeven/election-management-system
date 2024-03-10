@@ -13,6 +13,7 @@ import {
   PollingStation as DbPollingStation,
   StatusGroup as DbStatusGroup,
   Subject as DbSubject,
+  SubjectOccupancy as DbSubjectOccupency,
   Unit as DbUnit,
   VotingResult as DbVotingResult,
   Upload as DbUpload,
@@ -102,6 +103,8 @@ export type Employee = Person & {
 export type Subject = DbSubject & {
   belongsTo: Faculty
 }
+
+export type SubjectOccupancy = DbSubjectOccupency
 
 export type Site = DbSite
 

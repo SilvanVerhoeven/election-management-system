@@ -1,10 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import getStatusGroupsForPerson from "./getStatusGroupsForPerson"
 import { Person } from "src/types"
-import findEnrolment from "./findEnrolment"
-import getEmploymentsForPerson from "./getEmploymentsForPerson"
+import getPerson from "./getPerson"
 
 /**
  * Returns the latest version of all persons.
@@ -12,27 +10,17 @@ import getEmploymentsForPerson from "./getEmploymentsForPerson"
  * @returns All Persons
  */
 export default resolver.pipe(async (_: null, ctx: Ctx): Promise<Person[]> => {
-  const dbPersons = await db.person.findMany({
+  const dbPersonIds = await db.person.findMany({
     distinct: ["globalId"],
     orderBy: {
       version: {
         createdAt: "desc",
       },
     },
+    select: { globalId: true },
   })
 
   return await Promise.all(
-    dbPersons.map(async (dbPerson) => {
-      const statusGroups = await getStatusGroupsForPerson(dbPerson.globalId, ctx)
-      const enrolment = await findEnrolment({ personId: dbPerson.globalId }, ctx)
-      const employments = await getEmploymentsForPerson(dbPerson.globalId, ctx)
-
-      return {
-        ...dbPerson,
-        statusGroups,
-        enrolment,
-        employments,
-      }
-    })
+    dbPersonIds.map(async (dbPersonId) => getPerson({ globalId: dbPersonId.globalId }, ctx))
   )
 })

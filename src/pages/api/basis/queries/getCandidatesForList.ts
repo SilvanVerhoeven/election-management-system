@@ -1,8 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Candidate } from "src/types"
-import getCandidate from "./getCandidate"
+import getPerson from "./getPerson"
+import { Person } from "src/types"
 
 /**
  * Returns the latest version of candidates on the candidate list with the given globalId.
@@ -10,7 +10,7 @@ import getCandidate from "./getCandidate"
  *
  * @returns Candidates on the given candidate list
  */
-export default resolver.pipe(async (listGlobalId: number, ctx: Ctx): Promise<Candidate[]> => {
+export default resolver.pipe(async (listGlobalId: number, ctx: Ctx): Promise<Person[]> => {
   const dbConnections = await db.candidateListPosition.findMany({
     distinct: ["personId"],
     where: {
@@ -21,7 +21,7 @@ export default resolver.pipe(async (listGlobalId: number, ctx: Ctx): Promise<Can
 
   return await Promise.all(
     dbConnections.map(
-      async (dbConnection) => await getCandidate({ globalId: dbConnection.personId }, ctx)
+      async (dbConnection) => await getPerson({ globalId: dbConnection.personId }, ctx)
     )
   )
 })

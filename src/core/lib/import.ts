@@ -34,9 +34,9 @@ export const importData = async <T>(
 ): Promise<ImportResult> => {
   const upload = await getUpload(uploadId, ctx)
   const buffer = await readFile(getFilePath(upload))
-  const parsedUnits = await parseHandler(buffer)
+  const parsedData = await parseHandler(buffer)
 
   const version = await createVersion({ uploadId: upload.id }, ctx)
 
-  return await importHandler(parsedUnits, version.id, ctx)
+  return await importHandler(parsedData, version.id, ctx)
 }

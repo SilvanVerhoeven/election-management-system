@@ -5,8 +5,11 @@ import createPerson, { PersonProps } from "./createPerson"
 import createEmployment, { EmploymentProps } from "./createEmployment"
 import getEmploymentsForPerson from "../queries/getEmploymentsForPerson"
 import findStudentStatusGroupForPerson from "../queries/findStudentStatusGroupForPerson"
+import findStatusGroup from "../queries/findStatusGroup"
 
-export interface EmployeeProps extends PersonProps, Omit<EmploymentProps, "personId"> {}
+export interface EmployeeProps
+  extends Omit<PersonProps, "statusGroupIds">,
+    Omit<EmploymentProps, "personId"> {}
 
 /**
  * Creates a new student candidate, unless it matches another student candidate completely.
@@ -18,12 +21,17 @@ export default resolver.pipe(
     { versionId, accountingUnitId, employedAtId, position, ...personProps }: EmployeeProps,
     ctx: Ctx
   ): Promise<Employee> => {
+    const statusGroupIds: number[] = []
+
+    // Add employee status group from position
+    const employeeStatusGroup = await findStatusGroup({ position }, ctx)
+    if (!!employeeStatusGroup) statusGroupIds.push(employeeStatusGroup.globalId)
+
     // Add student status group if member to avoid its deletion
     const studentStatusGroup = await findStudentStatusGroupForPerson(
       { externalId: personProps.externalId },
       ctx
     )
-    const statusGroupIds = personProps.statusGroupIds ?? []
     if (!!studentStatusGroup) statusGroupIds.push(studentStatusGroup.globalId)
 
     const person = await createPerson(

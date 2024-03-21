@@ -74,7 +74,9 @@ const structureLists = (lists: CandidateList[]): ProposalRenderStatusGroupsData[
                 index: index + 1,
                 firstName: candidate.firstName,
                 lastName: candidate.lastName,
-                unit: "subjects" in candidate ? getDisplayText(candidate.subjects) : "TODO",
+                unit: !!candidate.enrolment
+                  ? getDisplayText(candidate.enrolment.subjects)
+                  : candidate.employments.map((e) => e.employedAt.name).join(", "),
               }
             }),
           }

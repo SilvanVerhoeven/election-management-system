@@ -7,6 +7,7 @@ import {
   ParsedElectionData,
   ParsedGeneralData,
   ParsedPollingStationData,
+  ParsedPositionMapData,
   ParsedSiteData,
   ParsedStatusGroupData,
   parseBasisExcel,
@@ -24,6 +25,7 @@ import findConstituency from "../queries/findConstituency"
 import createElectionSet from "./createElectionSet"
 import { Constituency, StatusGroup } from "src/types"
 import { ImportResult, importData } from "src/core/lib/import"
+import createPositionMapping from "./createPositionMapping"
 
 const importGeneralData = async (general: ParsedGeneralData, versionId: number, ctx: Ctx) =>
   await createElectionSet(
@@ -145,6 +147,47 @@ const importStatusGroups = async (
   return result
 }
 
+const importPositionMap = async (map: ParsedPositionMapData[], versionId: number, ctx: Ctx) => {
+  const result: ImportResult = {
+    success: 0,
+    skipped: [],
+    error: [],
+  }
+
+  await Promise.all(
+    map.map(async (mapping) => {
+      try {
+        await createPositionMapping(
+          {
+            position: mapping.position,
+            statusGroupNameOrShortName: mapping.statusGroupNameOrShortName,
+          },
+          ctx
+        )
+        result.success++
+      } catch (error) {
+        if (error.name.includes("was not assigned")) {
+          result.success++
+          return
+        }
+        if (error.name.includes("NotFound")) {
+          result.error.push({
+            label: `[ERR] Position Mapping '${mapping.position}' -> '${mapping.statusGroupNameOrShortName}'`,
+            error: `Unknown status group '${mapping.statusGroupNameOrShortName}'`,
+          })
+          return
+        }
+        result.error.push({
+          label: `[ERR] Position Mapping '${mapping.position}' -> '${mapping.statusGroupNameOrShortName}'`,
+          error: `${error.message}`,
+        })
+      }
+    })
+  )
+
+  return result
+}
+
 const importCommittees = async (committees: ParsedCommitteeData[], versionId: number, ctx: Ctx) => {
   const result: ImportResult = {
     success: 0,
@@ -230,15 +273,17 @@ export default resolver.pipe(async (uploadId: number, ctx: Ctx) => {
       results.push(await importPollingStations(data.pollingStations, versionId, ctx))
       results.push(await importConstituencies(data.constituencies, versionId, ctx))
       results.push(await importStatusGroups(data.statusGroups, versionId, ctx))
+      results.push(await importPositionMap(data.positionMap, versionId, ctx))
       results.push(await importCommittees(data.committees, versionId, ctx))
       results.push(await importElections(data.elections, electionSet.globalId, versionId, ctx))
 
       return results.reduce(
         (subSum, currResult) => {
-          subSum.error.concat(currResult.error)
-          subSum.skipped.concat(currResult.skipped)
-          subSum.success += currResult.success
-          return subSum
+          return {
+            error: subSum.error.concat(currResult.error),
+            skipped: subSum.skipped.concat(currResult.skipped),
+            success: (subSum.success += currResult.success),
+          }
         },
         { error: [], skipped: [], success: 0 }
       )

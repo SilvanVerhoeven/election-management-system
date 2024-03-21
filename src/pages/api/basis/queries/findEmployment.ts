@@ -1,7 +1,8 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Employment } from "src/types"
+import { Department, Employment } from "src/types"
+import getUnit from "./getUnit"
 
 export type FindEmploymentProps = {
   personId: number
@@ -24,7 +25,7 @@ export default resolver.pipe(
     { personId, accountingUnitId, position, versionId }: FindEmploymentProps,
     ctx: Ctx
   ): Promise<Employment | null> => {
-    const employment = await db.employment.findFirst({
+    const dbEmployment = await db.employment.findFirst({
       where: {
         personId,
         accountingUnitId,
@@ -34,6 +35,11 @@ export default resolver.pipe(
       orderBy: { version: { createdAt: "desc" } },
     })
 
-    return employment
+    if (!dbEmployment) return null
+
+    return {
+      ...dbEmployment,
+      employedAt: (await getUnit({ globalId: dbEmployment.employedAtId }, ctx)) as Department,
+    }
   }
 )

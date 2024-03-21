@@ -1,8 +1,9 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Employment } from "src/types"
+import { Department, Employment } from "src/types"
 import findEmployment from "../queries/findEmployment"
+import getUnit from "../queries/getUnit"
 
 export interface EmploymentProps {
   personId: number
@@ -58,6 +59,13 @@ export default resolver.pipe(
       },
     })
 
-    return newEmployment.deleted ? null : newEmployment
+    if (newEmployment.deleted) return null
+
+    const department = (await getUnit({ globalId: newEmployment.employedAtId }, ctx)) as Department
+
+    return {
+      ...newEmployment,
+      employedAt: department,
+    }
   }
 )

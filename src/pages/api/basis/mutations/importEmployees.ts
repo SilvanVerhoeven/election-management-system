@@ -48,9 +48,27 @@ const importEmployees = async (employees: ParsedEmployeeData[], versionId: numbe
 
       result.success++
     } catch (error) {
+      if (error.message.includes("was not assigned")) {
+        result.success++
+        continue
+      }
+      if (error.message.includes("cannot be mapped")) {
+        result.skipped.push({
+          label: `[SKIP] ${employee.firstName} ${employee.lastName} (${employee.externalId})`,
+          error: `Position ${employee.position} cannot be mapped to status group`,
+        })
+        continue
+      }
+      if (error.message.includes("Unique constraint failed")) {
+        result.error.push({
+          label: `[ERR] ${employee.firstName} ${employee.lastName} (${employee.externalId})`,
+          error: `External ID duplicate '${employee.externalId}' with different user data. Error: ${error.message}`,
+        })
+        continue
+      }
       result.error.push({
         label: `[ERR] ${employee.firstName} ${employee.lastName} (${employee.externalId})`,
-        error: `External ID duplicate '${employee.externalId}' with different user data`,
+        error: `${error.message}`,
       })
       continue
     }

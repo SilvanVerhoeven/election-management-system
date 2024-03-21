@@ -26,12 +26,13 @@ import getPersons from "./api/basis/queries/getPersons"
 import { Person, CandidateList, CandidateListOrderType } from "src/types"
 import getElectionsInSet from "./api/basis/queries/getElectionsInSet"
 import getLatestElectionSet from "./api/basis/queries/getLatestElectionSet"
-import { fullName } from "src/core/lib/person"
+import { activeStatusGroup, fullName } from "src/core/lib/person"
 import createCandidateList from "./api/basis/mutations/createCandidateList"
 import createVersion from "./api/basis/mutations/createVersion"
 import createCandidacies from "./api/basis/mutations/createCandidacies"
 import getCandidateLists from "./api/basis/queries/getCandidateLists"
 import { getDisplayText } from "src/core/components/displays/ElectionDisplay"
+import dayjs from "dayjs"
 
 const { Title, Text } = Typography
 
@@ -285,7 +286,11 @@ const CandidaturesPage: BlitzPage = () => {
             </Radio.Group>
           </Form.Item>
           <Form.Item name="submittedOn" label="Eingereicht am" rules={[{ required: true }]}>
-            <DatePicker onChange={() => {}} />
+            <DatePicker
+              onChange={() => {}}
+              defaultValue={dayjs(new Date())}
+              format={"DD.MM.YYYY"}
+            />
           </Form.Item>
           <Form.Item name="candidatesForId" label="Kandidiert für" rules={[{ required: true }]}>
             <Select
@@ -311,13 +316,13 @@ const CandidaturesPage: BlitzPage = () => {
               placeholder="Namen oder Matrikelnummer eingeben"
               filterOption={filterCandidate}
               options={(persons ?? []).map((person) => {
+                const statusGroupName = activeStatusGroup(person)?.shortName
                 return {
                   value: person.globalId,
-                  label: `${fullName(person)} (${
-                    person.enrolment && person.enrolment.matriculationNumber
-                      ? person.enrolment.matriculationNumber
-                      : "Mitarbeiter:in"
-                  })`,
+                  label:
+                    `${fullName(person)}` +
+                    (!!person.enrolment ? `, ${person.enrolment.matriculationNumber}` : "") +
+                    (statusGroupName ? ` (${statusGroupName})` : ""),
                 }
               })}
             />

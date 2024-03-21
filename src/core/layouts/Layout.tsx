@@ -7,6 +7,7 @@ import Content from "src/core/components/Content"
 import theme from "src/theme/themeConfig"
 import Head from "next/head"
 import { BlitzLayout } from "@blitzjs/next"
+import deDE from "antd/lib/locale/de_DE"
 
 export const metadata = {
   title: "Election Management System",
@@ -34,7 +35,7 @@ const Layout: BlitzLayout<{ title?: string; children?: React.ReactNode }> = ({
           {/* <Header /> */}
           <Content>
             <StyledComponentsRegistry>
-              <ConfigProvider theme={theme}>
+              <ConfigProvider theme={theme} locale={deDE}>
                 <Suspense fallback={<SuspenseSpinner />}>{children}</Suspense>
               </ConfigProvider>
             </StyledComponentsRegistry>

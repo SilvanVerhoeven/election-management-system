@@ -79,7 +79,9 @@ export type Data = DbUpload & {
   key?: string
 }
 
-export type Employment = DbEmployment
+export type Employment = DbEmployment & {
+  employedAt: Department
+}
 
 export type Enrolment = DbEnrolment & {
   subjects: Subject[]

@@ -72,7 +72,9 @@ const structureLists = (lists: CandidateList[]): BallotRenderListData[] => {
         parallelCandidates[offset + 1] = {
           firstName: candidate.firstName,
           lastName: candidate.lastName,
-          unit: "subjects" in candidate ? getDisplayText(candidate.subjects) : "TODO",
+          unit: !!candidate.enrolment
+            ? getDisplayText(candidate.enrolment.subjects)
+            : candidate.employments.map((e) => e.employedAt.name).join(", "),
         }
       }
       group.members.push(parallelCandidates as BallotRenderListRowData)

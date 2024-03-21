@@ -189,6 +189,11 @@ export type ParsedStatusGroupData = {
   priority: number
 }
 
+export type ParsedPositionMapData = {
+  position: string
+  statusGroupNameOrShortName: string
+}
+
 export type ParsedCommitteeData = {
   name: string
   shortName: string
@@ -208,6 +213,7 @@ export type ParsedBasisData = {
   pollingStations: ParsedPollingStationData[]
   constituencies: ParsedConstituencyData[]
   statusGroups: ParsedStatusGroupData[]
+  positionMap: ParsedPositionMapData[]
   committees: ParsedCommitteeData[]
   elections: ParsedElectionData[]
 }
@@ -273,6 +279,16 @@ const parseStatusGroups = (sheet: Worksheet): ParsedStatusGroupData[] => {
     .filter((row) => !!row.name)
 }
 
+const parsePositionMap = (sheet: Worksheet): ParsedPositionMapData[] => {
+  const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
+  return rawRows.map((row) => {
+    return {
+      position: row.getCell(1).text,
+      statusGroupNameOrShortName: row.getCell(2).text,
+    }
+  })
+}
+
 const parseCommittees = (sheet: Worksheet): ParsedCommitteeData[] => {
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
@@ -322,6 +338,7 @@ export const parseBasisExcel = async (buffer: Buffer): Promise<ParsedBasisData> 
   const pollingStationsSheet = workbook.getWorksheet("Wahllokale")
   const constituenciesSheet = workbook.getWorksheet("Wahlkreise")
   const statusGroupsSheet = workbook.getWorksheet("Statusgruppen")
+  const positionMapSheet = workbook.getWorksheet("Mapping Positionen")
   const committeesSheet = workbook.getWorksheet("Gremien")
   const electionsSheet = workbook.getWorksheet("Einzelwahlen")
 
@@ -330,6 +347,7 @@ export const parseBasisExcel = async (buffer: Buffer): Promise<ParsedBasisData> 
   if (!pollingStationsSheet) throw new Error("Excel file missing polling stations worksheet")
   if (!constituenciesSheet) throw new Error("Excel file missing constituencies worksheet")
   if (!statusGroupsSheet) throw new Error("Excel file missing status groups worksheet")
+  if (!positionMapSheet) throw new Error("Excel file missing position map worksheet")
   if (!committeesSheet) throw new Error("Excel file missing committees worksheet")
   if (!electionsSheet) throw new Error("Excel file missing elections worksheet")
 
@@ -339,6 +357,7 @@ export const parseBasisExcel = async (buffer: Buffer): Promise<ParsedBasisData> 
     pollingStations: parsePollingStations(pollingStationsSheet),
     constituencies: parseConstituencies(constituenciesSheet),
     statusGroups: parseStatusGroups(statusGroupsSheet),
+    positionMap: parsePositionMap(positionMapSheet),
     committees: parseCommittees(committeesSheet),
     elections: parseElections(electionsSheet),
   }

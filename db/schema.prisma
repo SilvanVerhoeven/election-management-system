@@ -275,6 +275,12 @@ model StatusGroupMembership {
   @@id([personId, statusGroupId, deleted, versionId])
 }
 
+// Used on employee import to map Employment's position to StatusGroup
+model PositionStatusGroupMap {
+  position      String @unique
+  statusGroupId Int? // StatusGroup globalId
+}
+
 model StatusGroupEligibility {
   statusGroupId Int // StatusGroup globalId
   electionId    Int // Election globalId

@@ -200,6 +200,7 @@ const importCommittees = async (committees: ParsedCommitteeData[], versionId: nu
       {
         name: committee.name,
         shortName: committee.shortName,
+        electionsGroupedBy: committee.electionsGroupedBy,
         versionId,
       },
       ctx

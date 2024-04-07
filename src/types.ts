@@ -44,6 +44,12 @@ export enum ElectionType {
   BALLOT = "ballot",
 }
 
+export enum ElectionGroupingType {
+  COMMITTEE = "C",
+  COMMITTEE_CONSTITUENCY = "C+C",
+  COMMITTEE_STATUSGROUP = "C+S",
+}
+
 export enum CandidateListOrderType {
   ALPHABETICALLY = "alphabetical",
   NUMERIC = "numeric",
@@ -150,7 +156,9 @@ export type Election = DbElection & {
   constituencies: Constituency[]
 }
 
-export type Committee = DbCommittee
+export type Committee = DbCommittee & {
+  electionsGroupedBy: ElectionGroupingType
+}
 
 export type ElectionSet = DbElectionSet
 

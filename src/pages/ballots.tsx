@@ -7,8 +7,9 @@ import Layout from "src/core/layouts/Layout"
 import { getAntiCSRFToken } from "@blitzjs/auth"
 import { useQuery } from "@blitzjs/rpc"
 import getElections from "./api/basis/queries/getElections"
-import ElectionDocumentGenerationTable, {
-  GenerationListEntry,
+import {
+  ElectionGenerationListEntry,
+  ElectionGenerationTable,
 } from "src/core/components/tables/ElectionDocumentGenerationTable"
 
 const { Title } = Typography
@@ -19,13 +20,13 @@ const BallotPage: BlitzPage = () => {
   const [elections] = useQuery(getElections, null)
 
   const [isDownloadingAllBallots, setIsDownloadingAllBallots] = useState(false)
-  const [data, setData] = useState<GenerationListEntry[]>([])
+  const [data, setData] = useState<ElectionGenerationListEntry[]>([])
 
   useEffect(() => {
     setData(
-      elections.map((election, index): GenerationListEntry => {
+      elections.map((election, index): ElectionGenerationListEntry => {
         return {
-          election,
+          entry: election,
           disabled: data[index]?.disabled ?? false,
           onDownload: async (event, electionId) => await onDownload(electionId),
         }
@@ -90,7 +91,7 @@ const BallotPage: BlitzPage = () => {
             Alle Stimmzettel herunterladen
           </Button>
         </Space>
-        <ElectionDocumentGenerationTable data={data ?? []} />
+        <ElectionGenerationTable data={data ?? []} />
       </Space>
     </>
   )

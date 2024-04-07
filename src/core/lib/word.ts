@@ -3,6 +3,13 @@ import { getFilePath } from "./files"
 import { Upload } from "src/types"
 import PizZip from "pizzip"
 import Docxtemplater from "docxtemplater"
+import expressionParser from "docxtemplater/expressions"
+
+const displayList = (input: any, attribute: any) => {
+  if (!input) return undefined
+  if (!Array.isArray(input)) return attribute ? input[attribute] : input
+  return attribute ? input.map((item) => item[attribute]).join(", ") : input.join(", ")
+}
 
 /**
  * Generator for a word document based on data and a template.
@@ -16,9 +23,12 @@ export const generateWordDocument = async (data: any, template: Upload) => {
 
   const zip = new PizZip(content)
 
+  expressionParser.filters["display"] = displayList
+
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks: true,
+    parser: expressionParser,
   })
 
   doc.render(data)

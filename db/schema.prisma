@@ -319,11 +319,12 @@ model Election {
 }
 
 model Committee {
-  globalId  Int
-  name      String
-  shortName String?
-  version   Version @relation(fields: [versionId], references: [id])
-  versionId Int
+  globalId           Int
+  name               String
+  shortName          String?
+  electionsGroupedBy String  @default("C") // C (Committee), C+C (CommitteeAndConstituency), C+S (CommitteeAndStatusGroup), C+C+S
+  version            Version @relation(fields: [versionId], references: [id])
+  versionId          Int
 
   // REFERENCED BY
   // Election

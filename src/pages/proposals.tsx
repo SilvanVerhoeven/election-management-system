@@ -5,36 +5,44 @@ import { saveBlob } from "src/core/lib/files"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
 import { getAntiCSRFToken } from "@blitzjs/auth"
-import ElectionDocumentGenerationTable, {
-  GenerationListEntry,
+import {
+  CommitteeGenerationListEntry,
+  CommitteeGenerationTable,
 } from "src/core/components/tables/ElectionDocumentGenerationTable"
 import { useQuery } from "@blitzjs/rpc"
-import getElections from "./api/basis/queries/getElections"
+import getProposalsData from "./api/proposals/queries/getProposalsData"
 
 const { Title } = Typography
 
 const ProposalPage: BlitzPage = () => {
   const [messageApi, contextHolder] = message.useMessage()
 
-  const [elections] = useQuery(getElections, null)
+  const [proposalData] = useQuery(getProposalsData, null)
 
   const [isDownloadingAllProposals, setIsDownloadingAllProposals] = useState(false)
-  const [data, setData] = useState<GenerationListEntry[]>([])
+  const [data, setData] = useState<CommitteeGenerationListEntry[]>([])
 
   useEffect(() => {
-    setData(
-      elections.map((election, index): GenerationListEntry => {
-        return {
-          election,
-          disabled: data[index]?.disabled ?? false,
-          onDownload: async (event, electionId) => await onDownload(electionId),
-        }
-      })
-    )
-  }, [elections])
+    const entries = proposalData.map((data) => {
+      return {
+        entry: data.committee,
+        subEntry: data.constituencies,
+        disabled: false,
+        onDownload: !data.constituencies
+          ? async (event, committeeId) => await onDownload(committeeId)
+          : async (event, committeeId) =>
+              await onDownload(
+                committeeId,
+                data.constituencies!.map((c) => c.globalId)
+              ),
+      }
+    })
+
+    setData(entries)
+  }, [proposalData])
 
   useEffect(() => {
-    if (data.length !== elections.length) return // prevent overwriting initially queried and set elections on first render (when `disabled` is false anyways)
+    if (data.length !== proposalData.length) return // prevent overwriting initially queried and set proposals on first render (when `disabled` is false anyways)
     setData(
       data.map((entry) => {
         return {
@@ -51,14 +59,17 @@ const ProposalPage: BlitzPage = () => {
     setIsDownloadingAllProposals(false)
   }
 
-  const onDownload = async (electionId?: number) => {
+  const onDownload = async (committeeId?: number, constituencyIds?: number[]) => {
     try {
       const response = await fetch(
-        electionId ? `/api/proposals/${electionId}` : `/api/proposals/download`,
+        committeeId ? `/api/proposals/${committeeId}` : `/api/proposals/download`,
         {
+          method: "POST",
           headers: {
+            "Content-Type": "application/json",
             "anti-csrf": getAntiCSRFToken(),
           },
+          body: JSON.stringify(constituencyIds ?? []),
         }
       )
       if (response.status !== 200) {
@@ -90,7 +101,7 @@ const ProposalPage: BlitzPage = () => {
             Alle Wahlvorschläge herunterladen
           </Button>
         </Space>
-        <ElectionDocumentGenerationTable data={data ?? []} />
+        <CommitteeGenerationTable data={data ?? []} />
       </Space>
     </>
   )

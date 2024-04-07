@@ -270,7 +270,12 @@ const CandidaturesPage: BlitzPage = () => {
           </Button>,
         ]}
       >
-        <Form form={form} name="upsertList" onFinish={upsertList}>
+        <Form
+          form={form}
+          name="upsertList"
+          onFinish={upsertList}
+          initialValues={{ ["submittedOn"]: dayjs(new Date()) }}
+        >
           <Form.Item name="listName" label="Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
@@ -286,11 +291,7 @@ const CandidaturesPage: BlitzPage = () => {
             </Radio.Group>
           </Form.Item>
           <Form.Item name="submittedOn" label="Eingereicht am" rules={[{ required: true }]}>
-            <DatePicker
-              onChange={() => {}}
-              defaultValue={dayjs(new Date())}
-              format={"DD.MM.YYYY"}
-            />
+            <DatePicker format={"DD.MM.YYYY"} />
           </Form.Item>
           <Form.Item name="candidatesForId" label="Kandidiert für" rules={[{ required: true }]}>
             <Select

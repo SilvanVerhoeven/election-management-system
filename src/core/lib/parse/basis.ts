@@ -1,5 +1,6 @@
 import Excel, { Worksheet } from "exceljs"
 import { defaults, drawVerticalLine, applyDefaultStyle, generateIds, parseList } from "."
+import { ElectionGroupingType } from "src/types"
 
 const addBasisWorksheet = (workbook: Excel.Workbook) => {
   const sheet = workbook.addWorksheet("Eckdaten")
@@ -197,6 +198,7 @@ export type ParsedPositionMapData = {
 export type ParsedCommitteeData = {
   name: string
   shortName: string
+  electionsGroupedBy: ElectionGroupingType
 }
 
 export type ParsedElectionData = {
@@ -290,12 +292,19 @@ const parsePositionMap = (sheet: Worksheet): ParsedPositionMapData[] => {
 }
 
 const parseCommittees = (sheet: Worksheet): ParsedCommitteeData[] => {
+  const parseElectionGroupType = (rawGroupType: string): ElectionGroupingType => {
+    if (rawGroupType == "G+W") return ElectionGroupingType.COMMITTEE_CONSTITUENCY
+    if (rawGroupType == "G+S") return ElectionGroupingType.COMMITTEE_STATUSGROUP
+    return ElectionGroupingType.COMMITTEE
+  }
+
   const rawRows = sheet.getRows(2, sheet.rowCount - 1) ?? []
   return rawRows
     .map((row) => {
       return {
         shortName: row.getCell(1).text,
         name: row.getCell(2).text,
+        electionsGroupedBy: parseElectionGroupType(row.getCell(3).text),
       }
     })
     .filter((row) => !!row.name)

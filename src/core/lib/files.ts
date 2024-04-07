@@ -1,5 +1,5 @@
 import path from "path"
-import { Election, Upload } from "../../types"
+import { Committee, Constituency, Election, Upload } from "../../types"
 import PizZip from "pizzip"
 import { getDisplayText as getCommitteeDisplayText } from "src/core/components/displays/CommitteeDisplay"
 import { getDisplayText as getStatusGroupDisplayText } from "src/core/components/displays/StatusGroupDisplay"
@@ -59,25 +59,25 @@ export const saveBlob = async (blob: Blob, contentDisposition?: string | null) =
 }
 
 /**
- * Return the given election-related files as a .zip.
+ * Return the given item-related files as a .zip.
  *
- * @param elections Elections the files are related to.
- * @param files Files related to the elections. The first file is related to the first election. Elections and Files must have equal length.
- * @param getFullFileName Function to generate the the file's filename, including extension
+ * @param item Items the files are related to.
+ * @param files Files related to the items. The first file is related to the first item. Items and Files must have equal length.
+ * @param getFullFileName Function to generate the the file's filename based on the item, including extension
  * @returns ZIP file as a buffer containing all files
  */
-export const zippify = (
-  elections: Election[],
+export const zippify = <T>(
+  items: T[],
   files: Buffer[],
-  getFullFileName: (election: Election) => string
+  getFullFileName: (item: T) => string
 ): Buffer => {
   const zip = new PizZip()
 
   for (let i = 0; i < files.length; i++) {
-    const election = elections[i]
+    const item = items[i]
     const file = files[i]
-    if (!!file && !!election) {
-      const filename = `${getFullFileName(election)}`
+    if (!!file && !!item) {
+      const filename = `${getFullFileName(item)}`
       zip.file(filename, file)
     }
   }
@@ -95,3 +95,21 @@ export const getElectionFileName = (election: Election) =>
   `${getCommitteeDisplayText(election.committee)}_${election.constituencies
     .map((c) => getConstituencyDisplayText(c))
     .join("-")}_${election.statusGroups.map((sg) => getStatusGroupDisplayText(sg)).join("-")}`
+
+/**
+ * Returns the identifier of an committee in the filename format.
+ *
+ * @param committee Committee to get identifier for
+ * @returns `[committee]`
+ */
+export const getCommitteeFileName = (committee: Committee) =>
+  `${getCommitteeDisplayText(committee)}`
+
+/**
+ * Returns the identifier of constituencies in the filename format.
+ *
+ * @param constituencies Constituencies to get identifier for
+ * @returns `[constituency]_[constituency]`
+ */
+export const getConstituenciesFileName = (constituencies: Constituency[]) =>
+  constituencies.map(getConstituencyDisplayText).join("_")

@@ -2240,6 +2240,11 @@ ajv@^6.10.0, ajv@^6.12.4:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
+angular-expressions@1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/angular-expressions/-/angular-expressions-1.2.1.tgz#b0647a01ed564fa1a6a1b8400f3d50633208d452"
+  integrity sha512-pUnlViwIJ0L3KXh1a5gJGuMuGvxwbTbxkGINt7F6259p5UtksRpQ9Q5GhYb6VyfVfKtR65QAJgDhml3zpgmFuA==
+
 ansi-align@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/ansi-align/-/ansi-align-3.0.1.tgz#0cdf12e111ace773a86e9a1fad1225c43cb19a59"

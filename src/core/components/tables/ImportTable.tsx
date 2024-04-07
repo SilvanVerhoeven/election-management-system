@@ -141,7 +141,11 @@ const ImportTable = ({ uploadFields, onFinishedDataImport }: ImportTableProps) =
                 customRequest={(options) => uploadFile(options, "basis")}
                 accept={record.accept}
               >
-                <Button icon={<UploadOutlined />} loading={isUploading || isUpdating}>
+                <Button
+                  icon={<UploadOutlined />}
+                  loading={isUploading || isUpdating}
+                  disabled={isUploading || isUpdating}
+                >
                   Importieren
                 </Button>
               </UploadComponent>

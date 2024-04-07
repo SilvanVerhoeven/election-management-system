@@ -6,7 +6,7 @@
  * @returns True if both arrays have the same values and any value occurs equally often in both arrays
  */
 export const haveEqualValues = <T>(a: T[], b: T[]) =>
-  a.concat().sort().join(",") == b.concat().sort().join(",")
+  JSON.stringify(a.concat().sort()) == JSON.stringify(b.concat().sort())
 
 /**
  * Check whether two arrays have the same values in the same order.
@@ -15,7 +15,7 @@ export const haveEqualValues = <T>(a: T[], b: T[]) =>
  * @param b Array 2
  * @returns True if both arrays have the same values in the same order
  */
-export const areIdentical = <T>(a: T[], b: T[]) => a.join(",") == b.join(",")
+export const areIdentical = <T>(a: T[], b: T[]) => JSON.stringify(a) == JSON.stringify(b)
 
 /**
  * Helper for `Array.filter` that allows to filter out all unique values of the filtered array.

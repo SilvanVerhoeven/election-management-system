@@ -1,24 +1,26 @@
 import mime from "mime"
 import { api } from "src/blitz-server"
-import getElections from "../basis/queries/getElections"
 import { zippify } from "src/core/lib/files"
-import { downloadProposal, getProposalFileName, getProposalFileType } from "./[electionId]"
+import { downloadProposal, getProposalFileName, getProposalFileType } from "./[committeeId]"
+import getProposalsData from "./queries/getProposalsData"
 
 export default api(async (req, res, ctx) => {
-  if (req.method !== "GET") {
+  if (req.method !== "POST") {
     res.status(405).send({ error: "Method not allowed" })
     return
   }
 
-  const elections = await getElections(null, ctx)
+  const proposalData = await getProposalsData(null, ctx)
   const proposals = await Promise.all(
-    elections.map(async (election) => await downloadProposal(election, ctx))
+    proposalData.map(
+      async (data) => await downloadProposal(data.committee, data.constituencies ?? [], ctx)
+    )
   )
 
   const zip = zippify(
-    elections,
+    proposalData,
     proposals,
-    (election) => `${getProposalFileName(election)}.${getProposalFileType()}`
+    (data) => `${getProposalFileName(data)}.${getProposalFileType()}`
   )
 
   const now = new Date()

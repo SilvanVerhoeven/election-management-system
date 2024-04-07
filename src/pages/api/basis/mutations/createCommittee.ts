@@ -1,10 +1,12 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db, { Committee as DbCommittee } from "db"
+import { ElectionGroupingType } from "src/types"
 
 export interface CommitteeProps {
   name: string
   shortName?: string
+  electionsGroupedBy: ElectionGroupingType
   versionId: number
 }
 
@@ -14,7 +16,10 @@ export interface CommitteeProps {
  * @returns Newly created or matching committee in the bare DB form
  */
 export default resolver.pipe(
-  async ({ name, shortName, versionId }: CommitteeProps, ctx: Ctx): Promise<DbCommittee> => {
+  async (
+    { name, shortName, electionsGroupedBy, versionId }: CommitteeProps,
+    ctx: Ctx
+  ): Promise<DbCommittee> => {
     const match = await db.committee.findFirst({
       where: {
         OR: [{ name }, { shortName }],
@@ -23,7 +28,10 @@ export default resolver.pipe(
     })
 
     if (match) {
-      const isCompleteMatch = match.name == name && match.shortName == (shortName || null)
+      const isCompleteMatch =
+        match.name == name &&
+        match.shortName == (shortName || null) &&
+        match.electionsGroupedBy == electionsGroupedBy
 
       if (isCompleteMatch) return match
     }
@@ -37,6 +45,7 @@ export default resolver.pipe(
         globalId: newCommitteeId,
         name,
         shortName: shortName || null,
+        electionsGroupedBy,
         version: { connect: { id: versionId } },
       },
     })

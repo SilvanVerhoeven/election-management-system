@@ -1,7 +1,7 @@
 import { resolver } from "@blitzjs/rpc"
 import { Ctx } from "blitz"
 import db from "db"
-import { Committee } from "src/types"
+import { Committee, ElectionGroupingType } from "src/types"
 
 export interface FindCommitteeProps {
   nameOrShortName: string
@@ -18,7 +18,7 @@ export interface FindCommitteeProps {
  */
 export default resolver.pipe(
   async ({ nameOrShortName, versionId }: FindCommitteeProps, ctx: Ctx): Promise<Committee> => {
-    return await db.committee.findFirstOrThrow({
+    const dbCommittee = await db.committee.findFirstOrThrow({
       where: {
         OR: [
           {
@@ -32,5 +32,10 @@ export default resolver.pipe(
       },
       orderBy: { version: { createdAt: "desc" } },
     })
+
+    return {
+      ...dbCommittee,
+      electionsGroupedBy: dbCommittee.electionsGroupedBy as ElectionGroupingType,
+    }
   }
 )

@@ -4,6 +4,13 @@ import { ColumnsType } from "antd/es/table"
 import { CandidateList, Election } from "src/types"
 import ElectionDisplay, { getDisplayText } from "../displays/ElectionDisplay"
 
+export const distinctElections = (value: Election, index: number, self: Election[]): boolean => {
+  return self.map((e) => e.globalId).indexOf(value.globalId) === index
+}
+
+export const byDisplayText = (a: Election, b: Election) =>
+  getDisplayText(a).localeCompare(getDisplayText(b))
+
 const CandidateListTable = ({ data }: { data: CandidateList[] }) => {
   const columns: ColumnsType<CandidateList> = [
     {
@@ -22,12 +29,27 @@ const CandidateListTable = ({ data }: { data: CandidateList[] }) => {
       title: "Wahl",
       dataIndex: ["candidatesFor"],
       render: (election: Election) => <ElectionDisplay election={election} />,
+      filters: data
+        .map((list) => list.candidatesFor)
+        .filter(distinctElections)
+        .sort(byDisplayText)
+        .map((election) => {
+          return { text: getDisplayText(election), value: election.globalId }
+        }),
+      onFilter: (value, record) => record.candidatesFor.globalId === value,
       sorter: (a, b) =>
         getDisplayText(a.candidatesFor).localeCompare(getDisplayText(b.candidatesFor)),
     },
     {
+      title: "Rang",
+      dataIndex: ["rank"],
+      width: 90,
+      sorter: (a, b) => a.rank ?? -1 - (b.rank ?? -1),
+    },
+    {
       title: "Mitglieder",
       dataIndex: ["candidates", "length"],
+      width: 120,
       sorter: (a, b) => a.candidates.length - b.candidates.length,
     },
     {

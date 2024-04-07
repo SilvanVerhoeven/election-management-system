@@ -162,9 +162,10 @@ const structureGroupedC_Election = (
     name: election.name ?? "",
     numberOfVotes: election.numberOfSeats,
     constituencies: structureConstituencies(election.constituencies),
-    lists: groupByStatusGroup(lists, election.statusGroups).flatMap(({ lists }) =>
-      structureCandidateLists(lists)
-    ),
+    lists: groupByStatusGroup(
+      lists.filter((list) => list.candidatesForId === election.globalId),
+      election.statusGroups
+    ).flatMap(({ lists }) => structureCandidateLists(lists)),
   }
 }
 
@@ -176,7 +177,9 @@ const structureGroupedCS_Election = (
     name: election.name ?? "",
     numberOfVotes: election.numberOfSeats,
     constituencies: structureConstituencies(election.constituencies),
-    lists: structureCandidateLists(lists),
+    lists: structureCandidateLists(
+      lists.filter((list) => list.candidatesForId === election.globalId)
+    ),
   }
 }
 
@@ -187,9 +190,10 @@ const structureGroupedCC_Election = (
   return {
     name: election.name ?? "",
     numberOfVotes: election.numberOfSeats,
-    lists: groupByStatusGroup(lists, election.statusGroups).flatMap(({ lists }) =>
-      structureCandidateLists(lists)
-    ),
+    lists: groupByStatusGroup(
+      lists.filter((list) => list.candidatesForId === election.globalId),
+      election.statusGroups
+    ).flatMap(({ lists }) => structureCandidateLists(lists)),
   }
 }
 

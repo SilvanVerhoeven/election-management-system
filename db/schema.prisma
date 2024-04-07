@@ -248,6 +248,7 @@ model CandidateList {
   submittedOn     DateTime
   createdOn       DateTime @default(now())
   candidatesForId Int // Election globalId
+  rank            Int? // Determines order of lists within an election. Listing in ascending rank order
   version         Version  @relation(fields: [versionId], references: [id])
   versionId       Int
 

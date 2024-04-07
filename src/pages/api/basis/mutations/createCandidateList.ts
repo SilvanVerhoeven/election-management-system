@@ -9,6 +9,7 @@ export interface CandidateListProps {
   order: CandidateListOrderType
   submittedOn: Date
   candidatesForId: number
+  rank?: number
   versionId: number
 }
 
@@ -19,7 +20,7 @@ export interface CandidateListProps {
  */
 export default resolver.pipe(
   async (
-    { name, shortName, order, submittedOn, candidatesForId, versionId }: CandidateListProps,
+    { name, shortName, order, submittedOn, candidatesForId, rank, versionId }: CandidateListProps,
     ctx: Ctx
   ): Promise<CandidateList> => {
     const newListId =
@@ -33,6 +34,7 @@ export default resolver.pipe(
         order,
         candidatesForId,
         submittedOn,
+        rank: rank || null,
         version: { connect: { id: versionId } },
       },
     })

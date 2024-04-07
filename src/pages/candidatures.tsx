@@ -12,6 +12,7 @@ import {
   Radio,
   DatePicker,
   Select,
+  InputNumber,
 } from "antd"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
@@ -42,6 +43,7 @@ interface NewListFormProps {
   order: CandidateListOrderType
   submittedOn: Date
   candidatesForId: { label: string; value: number }
+  rank?: number
   candidateIds: { label: string; value: number }[]
 }
 
@@ -143,6 +145,7 @@ const CandidaturesPage: BlitzPage = () => {
         order: values.order,
         submittedOn: values.submittedOn,
         candidatesForId: values.candidatesForId.value,
+        rank: values.rank,
         versionId: version.id,
       })
       await createCandidaciesMutation({
@@ -327,6 +330,13 @@ const CandidaturesPage: BlitzPage = () => {
                 }
               })}
             />
+          </Form.Item>
+          <Form.Item
+            name="rank"
+            label="Rang"
+            extra="Anzeige von Listen nach aufsteigendem Rang. Niedrigster Rang: 1"
+          >
+            <InputNumber />
           </Form.Item>
         </Form>
       </Modal>

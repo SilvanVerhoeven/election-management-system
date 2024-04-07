@@ -19,11 +19,16 @@ export default resolver.pipe(
         candidatesForId: electionId ?? undefined,
       },
       distinct: ["globalId"],
-      orderBy: {
-        version: {
-          createdAt: "desc",
+      orderBy: [
+        {
+          rank: "asc",
         },
-      },
+        {
+          version: {
+            createdAt: "desc",
+          },
+        },
+      ],
     })
 
     return await Promise.all(

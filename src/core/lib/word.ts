@@ -11,6 +11,18 @@ const displayList = (input: any, attribute: any) => {
   return attribute ? input.map((item) => item[attribute]).join(", ") : input.join(", ")
 }
 
+const splitInColumns = (input: any, numberOfColumns: any) => {
+  if (!input) return undefined
+  if (isNaN(parseInt(numberOfColumns))) return input
+  if (!Array.isArray(input)) return [[input]]
+  const columns: { [id: string]: any }[] = []
+  for (let i = 0; i < input.length; i++) {
+    if (i % numberOfColumns == 0) columns.push({})
+    columns[columns.length - 1]![`col${i % numberOfColumns}`] = input[i]
+  }
+  return columns
+}
+
 /**
  * Generator for a word document based on data and a template.
  *
@@ -24,6 +36,7 @@ export const generateWordDocument = async (data: any, template: Upload) => {
   const zip = new PizZip(content)
 
   expressionParser.filters["display"] = displayList
+  expressionParser.filters["columns"] = splitInColumns
 
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,

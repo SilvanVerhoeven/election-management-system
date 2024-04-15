@@ -1,10 +1,21 @@
-import { CandidateList, Election, ElectionSet, Upload } from "src/types"
-import { formatList } from "./parse"
+import { CandidateList, Election, ElectionGroupingType, ElectionSet, Upload } from "src/types"
 import { generateWordDocument } from "./word"
 import { getDisplayText } from "../components/displays/SubjectDisplay"
+import {
+  RenderCommitteeData,
+  RenderCommonData,
+  RenderGroupedC_ElectionData,
+  RenderStatusGroupData,
+  structureCommittee,
+  structureConstituencies,
+  structureGroupedCS_Election,
+  structureStatusGroups,
+} from "./common_render"
+import dayjs from "dayjs"
 
 export interface BallotGenerationData {
   electionSet: ElectionSet
+  electionsGroupedBy: ElectionGroupingType
   election: Election
   lists: CandidateList[]
 }
@@ -31,12 +42,10 @@ interface BallotRenderListData {
   members: BallotRenderListRowData[]
 }
 
-interface BallotRenderData {
-  year: number
-  electionName: string | null
-  committee: string
-  statusGroup: string
-  lists: BallotRenderListData[]
+type BallotRenderData = RenderCommonData & {
+  statusGroups: RenderStatusGroupData[]
+  constituencies: RenderCommitteeData[]
+  election: RenderGroupedC_ElectionData
 }
 
 /**
@@ -92,11 +101,13 @@ const structureLists = (lists: CandidateList[]): BallotRenderListData[] => {
  */
 const structureForRender = (data: BallotGenerationData): BallotRenderData => {
   return {
-    electionName: data.election.name || null,
-    year: data.electionSet.startDate.getFullYear(),
-    committee: data.election.committee.name,
-    statusGroup: formatList(data.election.statusGroups.map((sg) => sg.name)),
-    lists: structureLists(data.lists),
+    electionSetName: data.electionSet.name,
+    electionsGroupedBy: data.electionsGroupedBy,
+    committee: structureCommittee(data.election.committee),
+    date: dayjs().format(process.env.DATE_FORMAT || "DD/MM/YYYY"),
+    statusGroups: structureStatusGroups(data.election.statusGroups),
+    constituencies: structureConstituencies(data.election.constituencies),
+    election: structureGroupedCS_Election(data.election, data.lists),
   }
 }
 

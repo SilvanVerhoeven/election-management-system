@@ -24,6 +24,7 @@ export const downloadBallot = async (election: Election, ctx: Ctx) => {
 
   return await generateBallot(
     {
+      electionsGroupedBy: election.committee.electionsGroupedBy,
       electionSet,
       election,
       lists,

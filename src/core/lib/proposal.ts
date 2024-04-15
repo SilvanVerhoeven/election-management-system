@@ -9,11 +9,20 @@ import {
   Upload,
 } from "src/types"
 import { generateWordDocument } from "./word"
-import { getDisplayText } from "../components/displays/SubjectDisplay"
-import { getCandidateListOrderDisplayText } from "./basis"
 import { activeStatusGroup } from "./person"
 import dayjs from "dayjs"
 import { areIdentical } from "./array"
+import {
+  RenderCandidateListData,
+  RenderCommonData,
+  RenderConstituencyData,
+  RenderGroupedC_ElectionData,
+  RenderStatusGroupData,
+  structureCandidateLists,
+  structureCommittee,
+  structureConstituencies,
+  structureGroupedCS_Election,
+} from "./common_render"
 
 export interface ProposalGenerationData {
   electionSet: ElectionSet
@@ -29,53 +38,10 @@ export interface GenerationData {
   lists: CandidateList[]
 }
 
-interface ProposalRenderCandidateData {
-  index: number
-  firstName: string
-  lastName: string
-  unit: string
-}
-
-interface CommitteeRenderData {
-  name: string
-  shortName: string | null
-}
-
-interface RenderCandidateData {
-  index: number
-  firstName: string
-  lastName: string
-  unit: string
-}
-
-interface RenderCandidateListData {
-  name: string
-  shortName: string | null
-  orderType: string
-  members: RenderCandidateData[]
-}
-
-interface RenderConstituencyData {
-  name: string
-  shortName: string | null
-}
-
-interface RenderGroupedC_ElectionData {
-  name: string
-  numberOfVotes: number
-  lists: RenderCandidateListData[]
-  constituencies: RenderConstituencyData[]
-}
-
 interface RenderGroupedCC_ElectionData {
   name: string
   numberOfVotes: number
   lists: RenderCandidateListData[]
-}
-
-interface RenderStatusGroupData {
-  name: string
-  shortName: string | null
 }
 
 type RenderGroupedC_StatusGroupData = RenderStatusGroupData & {
@@ -86,27 +52,23 @@ type RenderGroupedCC_StatusGroupData = RenderStatusGroupData & {
   elections: RenderGroupedCC_ElectionData[]
 }
 
-type RenderData = {
-  electionsGroupedBy: ElectionGroupingType
-  date: string
-  electionSetName: string
-  committee: CommitteeRenderData
-} & (
-  | {
-      electionsGroupedBy: ElectionGroupingType.COMMITTEE
-      statusGroups: RenderGroupedC_StatusGroupData[]
-    }
-  | {
-      electionsGroupedBy: ElectionGroupingType.COMMITTEE_CONSTITUENCY
-      constituencies: RenderConstituencyData[]
-      statusGroups: RenderGroupedCC_StatusGroupData[]
-    }
-  | {
-      electionsGroupedBy: ElectionGroupingType.COMMITTEE_STATUSGROUP
-      statusGroups: RenderStatusGroupData[]
-      elections: RenderGroupedC_ElectionData[]
-    }
-)
+type RenderData = RenderCommonData &
+  (
+    | {
+        electionsGroupedBy: ElectionGroupingType.COMMITTEE
+        statusGroups: RenderGroupedC_StatusGroupData[]
+      }
+    | {
+        electionsGroupedBy: ElectionGroupingType.COMMITTEE_CONSTITUENCY
+        constituencies: RenderConstituencyData[]
+        statusGroups: RenderGroupedCC_StatusGroupData[]
+      }
+    | {
+        electionsGroupedBy: ElectionGroupingType.COMMITTEE_STATUSGROUP
+        statusGroups: RenderStatusGroupData[]
+        elections: RenderGroupedC_ElectionData[]
+      }
+  )
 
 const distinctObjects = <T extends StatusGroup | Constituency>(
   object: T,
@@ -114,44 +76,6 @@ const distinctObjects = <T extends StatusGroup | Constituency>(
   objects: T[]
 ): boolean => {
   return objects.findIndex((val) => val.globalId === object.globalId, index) === index
-}
-
-const structureConstituencies = (constituencies: Constituency[]): RenderConstituencyData[] => {
-  return constituencies.map((constituency) => {
-    return {
-      name: constituency.name,
-      shortName: constituency.shortName,
-    }
-  })
-}
-
-const structureStatusGroups = (statusGroups: StatusGroup[]): RenderStatusGroupData[] => {
-  return statusGroups.map((statusGroup) => {
-    return {
-      name: statusGroup.name,
-      shortName: statusGroup.shortName,
-    }
-  })
-}
-
-const structureCandidateLists = (lists: CandidateList[]): RenderCandidateListData[] => {
-  return lists.map((list) => {
-    return {
-      name: list.name,
-      shortName: list.shortName,
-      orderType: getCandidateListOrderDisplayText(list.order),
-      members: list.candidates.map((candidate, index): ProposalRenderCandidateData => {
-        return {
-          index: index + 1,
-          firstName: candidate.firstName,
-          lastName: candidate.lastName,
-          unit: !!candidate.enrolment
-            ? getDisplayText(candidate.enrolment.subjects)
-            : candidate.employments.map((e) => e.employedAt.name).join(", "),
-        }
-      }),
-    }
-  })
 }
 
 const structureGroupedC_Election = (
@@ -166,20 +90,6 @@ const structureGroupedC_Election = (
       lists.filter((list) => list.candidatesForId === election.globalId),
       election.statusGroups
     ).flatMap(({ lists }) => structureCandidateLists(lists)),
-  }
-}
-
-const structureGroupedCS_Election = (
-  election: Election,
-  lists: CandidateList[]
-): RenderGroupedC_ElectionData => {
-  return {
-    name: election.name ?? "",
-    numberOfVotes: election.numberOfSeats,
-    constituencies: structureConstituencies(election.constituencies),
-    lists: structureCandidateLists(
-      lists.filter((list) => list.candidatesForId === election.globalId)
-    ),
   }
 }
 
@@ -268,10 +178,7 @@ const structureForRender = (data: GenerationData): RenderData => {
   const commonFields = {
     date: dayjs().format(process.env.DATE_FORMAT || "DD/MM/YYYY"),
     electionSetName: data.electionSet.name,
-    committee: {
-      name: data.committee.name,
-      shortName: data.committee.shortName,
-    },
+    committee: structureCommittee(data.committee),
   }
 
   const affectedStatusGroups = data.elections

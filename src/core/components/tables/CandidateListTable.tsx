@@ -3,6 +3,7 @@ import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
 import { CandidateList, Election } from "src/types"
 import ElectionDisplay, { getDisplayText } from "../displays/ElectionDisplay"
+import { getCandidateListOrderDisplayText } from "src/core/lib/basis"
 
 export const distinctElections = (value: Election, index: number, self: Election[]): boolean => {
   return self.map((e) => e.globalId).indexOf(value.globalId) === index
@@ -11,7 +12,13 @@ export const distinctElections = (value: Election, index: number, self: Election
 export const byDisplayText = (a: Election, b: Election) =>
   getDisplayText(a).localeCompare(getDisplayText(b))
 
-const CandidateListTable = ({ data }: { data: CandidateList[] }) => {
+const CandidateListTable = ({
+  data,
+  actionRender,
+}: {
+  data: CandidateList[]
+  actionRender: (list: CandidateList) => React.JSX.Element
+}) => {
   const columns: ColumnsType<CandidateList> = [
     {
       title: "Kürzel",
@@ -55,17 +62,24 @@ const CandidateListTable = ({ data }: { data: CandidateList[] }) => {
     {
       title: "Reihenfolge",
       dataIndex: "order",
+      render: (order) => getCandidateListOrderDisplayText(order),
       sorter: (a, b) => a.order.localeCompare(b.order),
     },
     {
       title: "Eingereicht am",
       dataIndex: "submittedOn",
+      render: (date: Date) => date.toLocaleDateString(),
       sorter: (a, b) => a.submittedOn.getTime() - b.submittedOn.getTime(),
     },
     {
       title: "Erstellt am",
       dataIndex: "createdOn",
+      render: (date: Date) => date.toLocaleDateString(),
       sorter: (a, b) => a.createdOn.getTime() - b.createdOn.getTime(),
+    },
+    {
+      title: "Aktionen",
+      render: actionRender,
     },
   ]
 

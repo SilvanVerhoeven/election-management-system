@@ -24,7 +24,7 @@ import { UploadChangeParam } from "antd/es/upload"
 import PersonTable from "src/core/components/tables/PersonTable"
 import { useMutation, useQuery } from "@blitzjs/rpc"
 import getPersons from "./api/basis/queries/getPersons"
-import { Person, CandidateList, CandidateListOrderType } from "src/types"
+import { Person, CandidateList, CandidateListOrderType, Election } from "src/types"
 import getElectionsInSet from "./api/basis/queries/getElectionsInSet"
 import getLatestElectionSet from "./api/basis/queries/getLatestElectionSet"
 import { activeStatusGroup, fullName } from "src/core/lib/person"
@@ -37,7 +37,7 @@ import dayjs from "dayjs"
 
 const { Title, Text } = Typography
 
-interface NewListFormProps {
+interface ListFormProps {
   listName: string
   listShortName?: string
   order: CandidateListOrderType
@@ -45,6 +45,24 @@ interface NewListFormProps {
   candidatesForId: { label: string; value: number }
   rank?: number
   candidateIds: { label: string; value: number }[]
+
+  // hidden
+  globalId?: number
+}
+
+const getPersonLabel = (person: Person) => {
+  const statusGroupName = activeStatusGroup(person)?.shortName
+  return (
+    `${fullName(person)}` +
+    (!!person.enrolment ? `, ${person.enrolment.matriculationNumber}` : "") +
+    (statusGroupName ? ` (${statusGroupName})` : "")
+  )
+}
+
+const getElectionLabel = (election: Election) => {
+  return `#${election.globalId}: ${getDisplayText(election)} (${election.numberOfSeats} ${
+    election.numberOfSeats == 1 ? "Sitz" : "Sitze"
+  })`
 }
 
 const CandidaturesPage: BlitzPage = () => {
@@ -115,7 +133,36 @@ const CandidaturesPage: BlitzPage = () => {
     {
       key: "lists",
       label: "Listen",
-      children: <CandidateListTable data={lists ?? []} />,
+      children: (
+        <CandidateListTable
+          data={lists ?? []}
+          actionRender={(list) => (
+            <Button
+              size="small"
+              onClick={() => {
+                form.setFieldsValue({
+                  candidateIds: list.candidates.map((candidate) => {
+                    return { label: getPersonLabel(candidate), value: candidate.globalId }
+                  }),
+                  candidatesForId: {
+                    label: getElectionLabel(list.candidatesFor),
+                    value: list.candidatesForId,
+                  },
+                  listName: list.name,
+                  listShortName: list.shortName ?? undefined,
+                  order: list.order,
+                  rank: list.rank ?? undefined,
+                  submittedOn: dayjs(list.submittedOn),
+                  globalId: list.globalId,
+                })
+                openListModal(true)
+              }}
+            >
+              Bearbeiten
+            </Button>
+          )}
+        />
+      ),
     },
     {
       key: "candidates",
@@ -129,16 +176,16 @@ const CandidaturesPage: BlitzPage = () => {
     },
   ]
 
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<ListFormProps>()
 
   const [createVersionMutation] = useMutation(createVersion)
   const [createCandidateListMutation] = useMutation(createCandidateList)
   const [createCandidaciesMutation] = useMutation(createCandidacies)
 
-  const upsertList = async (values: NewListFormProps) => {
+  const upsertList = async (values: ListFormProps) => {
     try {
       setIsUpsertingList(true)
-      const version = await createVersionMutation({})
+      const versionId = (await createVersionMutation({})).id
       const list = await createCandidateListMutation({
         name: values.listName,
         shortName: values.listShortName,
@@ -146,7 +193,8 @@ const CandidaturesPage: BlitzPage = () => {
         submittedOn: values.submittedOn,
         candidatesForId: values.candidatesForId.value,
         rank: values.rank,
-        versionId: version.id,
+        globalId: values.globalId,
+        versionId,
       })
       await createCandidaciesMutation({
         listId: list.globalId,
@@ -176,9 +224,11 @@ const CandidaturesPage: BlitzPage = () => {
   }
 
   const [showListModal, setShowListModal] = useState(false)
+  const [isInEditMode, setIsInEditMode] = useState(false)
   const [isUpsertingList, setIsUpsertingList] = useState(false)
 
-  const openListModal = () => {
+  const openListModal = (inEditMode: boolean = false) => {
+    setIsInEditMode(inEditMode)
     setShowListModal(true)
   }
   const closeListModal = () => {
@@ -236,7 +286,7 @@ const CandidaturesPage: BlitzPage = () => {
       {contextHolder}
       <Title style={{ marginTop: 0 }}>Kandidaturen</Title>
       <Space wrap>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openListModal}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => openListModal()}>
           Neue Liste
         </Button>
         <UploadComponent
@@ -255,7 +305,7 @@ const CandidaturesPage: BlitzPage = () => {
       </Space>
       <Tabs defaultActiveKey="1" items={items} />
       <Modal
-        title="Neue Liste anlegen"
+        title={isInEditMode ? "Liste bearbeiten" : "Neue Liste anlegen"}
         open={showListModal}
         onCancel={closeListModal}
         footer={[
@@ -269,7 +319,7 @@ const CandidaturesPage: BlitzPage = () => {
             type="primary"
             loading={isUpsertingList}
           >
-            Liste anlegen
+            {isInEditMode ? "Liste aktualisieren" : "Liste anlegen"}
           </Button>,
         ]}
       >
@@ -305,9 +355,7 @@ const CandidaturesPage: BlitzPage = () => {
               options={elections.map((election) => {
                 return {
                   value: election.globalId,
-                  label: `#${election.globalId}: ${getDisplayText(election)} (${
-                    election.numberOfSeats
-                  } ${election.numberOfSeats == 1 ? "Sitz" : "Sitze"})`,
+                  label: getElectionLabel(election),
                 }
               })}
             />
@@ -320,13 +368,9 @@ const CandidaturesPage: BlitzPage = () => {
               placeholder="Namen oder Matrikelnummer eingeben"
               filterOption={filterCandidate}
               options={(persons ?? []).map((person) => {
-                const statusGroupName = activeStatusGroup(person)?.shortName
                 return {
                   value: person.globalId,
-                  label:
-                    `${fullName(person)}` +
-                    (!!person.enrolment ? `, ${person.enrolment.matriculationNumber}` : "") +
-                    (statusGroupName ? ` (${statusGroupName})` : ""),
+                  label: getPersonLabel(person),
                 }
               })}
             />
@@ -336,6 +380,9 @@ const CandidaturesPage: BlitzPage = () => {
             label="Rang"
             extra="Anzeige von Listen nach aufsteigendem Rang. Niedrigster Rang: 1"
           >
+            <InputNumber />
+          </Form.Item>
+          <Form.Item name="globalId" hidden>
             <InputNumber />
           </Form.Item>
         </Form>

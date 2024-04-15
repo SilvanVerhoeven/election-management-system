@@ -4,6 +4,7 @@ import db, { CandidateList as CandidateList } from "db"
 import { CandidateListOrderType } from "src/types"
 
 export interface CandidateListProps {
+  globalId?: number
   name: string
   shortName?: string
   order: CandidateListOrderType
@@ -20,10 +21,20 @@ export interface CandidateListProps {
  */
 export default resolver.pipe(
   async (
-    { name, shortName, order, submittedOn, candidatesForId, rank, versionId }: CandidateListProps,
+    {
+      globalId,
+      name,
+      shortName,
+      order,
+      submittedOn,
+      candidatesForId,
+      rank,
+      versionId,
+    }: CandidateListProps,
     ctx: Ctx
   ): Promise<CandidateList> => {
     const newListId =
+      globalId ??
       ((await db.candidateList.findFirst({ orderBy: { globalId: "desc" } }))?.globalId ?? 0) + 1
 
     return await db.candidateList.create({

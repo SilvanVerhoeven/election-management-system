@@ -20,8 +20,12 @@ export default resolver.pipe(
     if (list.order === CandidateListOrderType.NUMERIC && position === undefined)
       throw new Error(`Position missing for numerically ordered candidate list ${list.globalId}`)
 
-    await db.candidateListPosition.create({
-      data: {
+    await db.candidateListPosition.upsert({
+      where: { personId_listId: { listId, personId: candidateId } },
+      update: {
+        position,
+      },
+      create: {
         listId,
         personId: candidateId,
         position,

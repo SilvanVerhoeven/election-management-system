@@ -13,6 +13,8 @@ import {
   DatePicker,
   Select,
   InputNumber,
+  Flex,
+  Popconfirm,
 } from "antd"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
@@ -34,6 +36,7 @@ import createCandidacies from "./api/basis/mutations/createCandidacies"
 import getCandidateLists from "./api/basis/queries/getCandidateLists"
 import { getDisplayText } from "src/core/components/displays/ElectionDisplay"
 import dayjs from "dayjs"
+import deleteCandidateList from "./api/basis/mutations/deleteCandidateList"
 
 const { Title, Text } = Typography
 
@@ -124,6 +127,11 @@ const CandidaturesPage: BlitzPage = () => {
     setLists((await refetchLists()).data)
   }, [refetchLists])
 
+  const deleteList = async (list: CandidateList) => {
+    await deleteCandidateListMutation({ globalId: list.globalId })
+    await updateLists()
+  }
+
   useEffect(() => {
     if (!!lists) return
     setLists(initialLists)
@@ -137,29 +145,42 @@ const CandidaturesPage: BlitzPage = () => {
         <CandidateListTable
           data={lists ?? []}
           actionRender={(list) => (
-            <Button
-              size="small"
-              onClick={() => {
-                form.setFieldsValue({
-                  candidateIds: list.candidates.map((candidate) => {
-                    return { label: getPersonLabel(candidate), value: candidate.globalId }
-                  }),
-                  candidatesForId: {
-                    label: getElectionLabel(list.candidatesFor),
-                    value: list.candidatesForId,
-                  },
-                  listName: list.name,
-                  listShortName: list.shortName ?? undefined,
-                  order: list.order,
-                  rank: list.rank ?? undefined,
-                  submittedOn: dayjs(list.submittedOn),
-                  globalId: list.globalId,
-                })
-                openListModal(true)
-              }}
-            >
-              Bearbeiten
-            </Button>
+            <Flex gap="small" wrap="wrap">
+              <Button
+                size="small"
+                onClick={() => {
+                  form.setFieldsValue({
+                    candidateIds: list.candidates.map((candidate) => {
+                      return { label: getPersonLabel(candidate), value: candidate.globalId }
+                    }),
+                    candidatesForId: {
+                      label: getElectionLabel(list.candidatesFor),
+                      value: list.candidatesForId,
+                    },
+                    listName: list.name,
+                    listShortName: list.shortName ?? undefined,
+                    order: list.order,
+                    rank: list.rank ?? undefined,
+                    submittedOn: dayjs(list.submittedOn),
+                    globalId: list.globalId,
+                  })
+                  openListModal(true)
+                }}
+              >
+                Bearbeiten
+              </Button>
+              <Popconfirm
+                title="Liste löschen?"
+                description="Rückgängig machen ist unmöglich."
+                onConfirm={async () => await deleteList(list)}
+                okText="Endgültig löschen"
+                cancelText="Abbrechen"
+              >
+                <Button size="small" danger type="text">
+                  Löschen
+                </Button>
+              </Popconfirm>
+            </Flex>
           )}
         />
       ),
@@ -181,6 +202,7 @@ const CandidaturesPage: BlitzPage = () => {
   const [createVersionMutation] = useMutation(createVersion)
   const [createCandidateListMutation] = useMutation(createCandidateList)
   const [createCandidaciesMutation] = useMutation(createCandidacies)
+  const [deleteCandidateListMutation] = useMutation(deleteCandidateList)
 
   const upsertList = async (values: ListFormProps) => {
     try {

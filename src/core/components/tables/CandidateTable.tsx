@@ -1,11 +1,11 @@
 import React from "react"
 import { Table } from "antd"
 import { ColumnsType } from "antd/es/table"
-import { Candidate } from "src/types"
+import { Person } from "src/types"
 import StatusGroupDisplay from "../displays/StatusGroupDisplay"
 
-const CandidateTable = ({ data }: { data: Candidate[] }) => {
-  const columns: ColumnsType<Candidate> = [
+const CandidateTable = ({ data }: { data: Person[] }) => {
+  const columns: ColumnsType<Person> = [
     {
       title: "Vorname",
       dataIndex: ["firstName"],
@@ -21,7 +21,7 @@ const CandidateTable = ({ data }: { data: Candidate[] }) => {
     },
     {
       title: "Statusgruppe",
-      render: (candidate: Candidate) =>
+      render: (candidate: Person) =>
         candidate.statusGroups.map((sg) => (
           <StatusGroupDisplay key={sg.globalId} statusGroup={sg} />
         )),
@@ -39,7 +39,10 @@ const CandidateTable = ({ data }: { data: Candidate[] }) => {
     {
       title: "Matrikelnummer",
       dataIndex: "matriculationNumber",
-      sorter: (a, b) => (a.matriculationNumber ?? "").localeCompare(b.matriculationNumber ?? ""),
+      sorter: (a, b) =>
+        (a.enrolment?.matriculationNumber ?? "").localeCompare(
+          a.enrolment?.matriculationNumber ?? ""
+        ),
     },
   ]
 

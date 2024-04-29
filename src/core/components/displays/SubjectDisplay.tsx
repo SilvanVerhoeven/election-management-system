@@ -28,11 +28,17 @@ const SubjectDisplay = ({ subjects, ...textProps }: SubjectDisplayProps) => {
   ) : subjects === undefined || subjects.length == 0 ? (
     <Text disabled>-</Text>
   ) : (
-    subjects.map((subject) => (
-      <Tag key={subject.globalId}>
-        <AbbreveationDisplay text={subject.name} abbreveation={subject.shortName} {...textProps} />
-      </Tag>
-    ))
+    <>
+      {subjects.map((subject) => (
+        <Tag key={subject.globalId}>
+          <AbbreveationDisplay
+            text={subject.name}
+            abbreveation={subject.shortName}
+            {...textProps}
+          />
+        </Tag>
+      ))}
+    </>
   )
 }
 

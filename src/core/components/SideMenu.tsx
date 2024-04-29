@@ -38,7 +38,6 @@ const items: MenuItem[] = [
   getItem(Routes.CandidaturesPage().href, "Kandidaturen", "candidatures", <TeamOutlined />),
   getItem(Routes.ProposalPage().href, "Wahlvorschläge", "proposals", <AppstoreOutlined />),
   getItem(Routes.BallotPage().href, "Stimmzettel", "ballots", <FileExcelOutlined />),
-  getItem(Routes.ResultPage().href, "Ergebnis", "results", <OrderedListOutlined />),
   getItem(null, "Konfiguration", "config", <SettingOutlined />, [
     getItem(Routes.TemplateConfigPage().href, "Vorlagen", "templates"),
   ]),

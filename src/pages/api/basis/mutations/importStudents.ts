@@ -33,14 +33,14 @@ const importStudents = async (students: ParsedStudentData[], versionId: number, 
 
     subjects.sort((a, b) => a.priority - b.priority) // ensure correct priority order
 
-    if (subjects.findIndex((subject) => subject === null) > -1) {
+    if (subjects.findIndex((subject) => subject.subject === null) > -1) {
       result.skipped.push({
         label: `[SKIP] ${student.firstName} ${student.lastName} (${student.matriculationNumber})`,
-        error: `No subject(s) found with ID(s) ${subjects
+        error: `No subject(s) found with short name(s) ${subjects
           .map((subject, index) =>
-            subject === null ? `'${student.subjectsShortName[index]}'` : null
+            subject.subject === null ? `'${student.subjectsShortName[index]}'` : null
           )
-          .filter((output) => output === null)
+          .filter((output) => output !== null)
           .join(", ")}`,
       })
       continue

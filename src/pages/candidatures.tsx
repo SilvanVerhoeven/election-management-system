@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react"
-import { UploadOutlined, PlusOutlined } from "@ant-design/icons"
+import { PlusOutlined } from "@ant-design/icons"
 import {
-  Upload as UploadComponent,
   Typography,
   Button,
   Space,
@@ -15,17 +14,13 @@ import {
   InputNumber,
   Flex,
   Popconfirm,
+  message,
 } from "antd"
 import { BlitzPage } from "@blitzjs/next"
 import Layout from "src/core/layouts/Layout"
-import { TabsProps, UploadFile } from "antd/lib"
+import { TabsProps } from "antd/lib"
 import CandidateListTable from "src/core/components/tables/CandidateListTable"
-import CandidateTable from "src/core/components/tables/CandidateTable"
-import useUpload from "src/core/hooks/useUpload"
-import { UploadChangeParam } from "antd/es/upload"
-import PersonTable from "src/core/components/tables/PersonTable"
 import { useMutation, useQuery } from "@blitzjs/rpc"
-import getPersons from "./api/basis/queries/getPersons"
 import { Person, CandidateList, CandidateListOrderType, Election } from "src/types"
 import getElectionsInSet from "./api/basis/queries/getElectionsInSet"
 import getLatestElectionSet from "./api/basis/queries/getLatestElectionSet"
@@ -37,6 +32,7 @@ import getCandidateLists from "./api/basis/queries/getCandidateLists"
 import { getDisplayText } from "src/core/components/displays/ElectionDisplay"
 import dayjs from "dayjs"
 import deleteCandidateList from "./api/basis/mutations/deleteCandidateList"
+import findPersons from "./api/basis/queries/findPersons"
 
 const { Title, Text } = Typography
 
@@ -69,54 +65,13 @@ const getElectionLabel = (election: Election) => {
 }
 
 const CandidaturesPage: BlitzPage = () => {
-  const {
-    isUploading,
-    handleFileChange: _handleFileChange,
-    uploadFile,
-    messageApi,
-    contextHolder,
-  } = useUpload()
+  const [messageApi, contextHolder] = message.useMessage()
 
-  const [isUpdatingPersons, setIsUpdatingPersons] = useState(false)
-
-  const [initialPersons, { refetch: refetchPersons }] = useQuery(getPersons, null, {
+  const [search, setSearch] = useState("")
+  const [persons] = useQuery(findPersons, search, {
     refetchOnWindowFocus: false,
+    suspense: false,
   })
-  const [persons, setPersons] = useState<Person[] | null>()
-
-  const updatePersons = useCallback(async () => {
-    setIsUpdatingPersons(true)
-    try {
-      setPersons((await refetchPersons()).data)
-    } finally {
-      setIsUpdatingPersons(false)
-    }
-  }, [refetchPersons])
-
-  useEffect(() => {
-    if (!!persons) return
-    setPersons(initialPersons)
-  }, [persons, setPersons, initialPersons])
-
-  const handleFileChange = async (change: UploadChangeParam<UploadFile>) =>
-    _handleFileChange(
-      change,
-      async () => {
-        await updatePersons()
-        void messageApi.success(`Upload erfolgreich`)
-      },
-      async (_, error) => {
-        console.error(error)
-        void messageApi.error(
-          <>
-            <Text strong>Upload fehlgeschlagen</Text>
-            <br />
-            <Text>{`${error}`}</Text>
-          </>,
-          10
-        )
-      }
-    )
 
   const [initialLists, { refetch: refetchLists }] = useQuery(getCandidateLists, null, {
     refetchOnWindowFocus: false,
@@ -184,16 +139,6 @@ const CandidaturesPage: BlitzPage = () => {
           )}
         />
       ),
-    },
-    {
-      key: "candidates",
-      label: "Kandidierende",
-      children: <CandidateTable data={[]} />,
-    },
-    {
-      key: "persons",
-      label: "Personen",
-      children: <PersonTable data={persons ?? []} />,
     },
   ]
 
@@ -292,17 +237,6 @@ const CandidaturesPage: BlitzPage = () => {
     void refetchElections()
   }, [latestElectionSet, refetchElections])
 
-  const filterCandidate = (input: string, option?: { label: string; value: number }) => {
-    if (!option) return false
-    const lowerCaseInput = input.toLowerCase()
-    const person = (persons ?? []).filter((person) => person.globalId == option.value)[0]
-    if (!person) return false
-    return (
-      fullName(person).toLowerCase().includes(lowerCaseInput) ||
-      !!person.enrolment?.matriculationNumber?.toLowerCase().includes(lowerCaseInput)
-    )
-  }
-
   return (
     <>
       {contextHolder}
@@ -311,19 +245,6 @@ const CandidaturesPage: BlitzPage = () => {
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openListModal()}>
           Neue Liste
         </Button>
-        <UploadComponent
-          disabled
-          action="/api/import/students"
-          maxCount={1}
-          showUploadList={false}
-          onChange={handleFileChange}
-          customRequest={(options) => uploadFile(options, "persons")}
-          accept=".csv"
-        >
-          <Button disabled icon={<UploadOutlined />} loading={isUploading || isUpdatingPersons}>
-            Personen importieren
-          </Button>
-        </UploadComponent>
       </Space>
       <Tabs defaultActiveKey="1" items={items} />
       <Modal
@@ -388,7 +309,10 @@ const CandidaturesPage: BlitzPage = () => {
               labelInValue
               mode="multiple"
               placeholder="Namen oder Matrikelnummer eingeben"
-              filterOption={filterCandidate}
+              filterOption={false}
+              searchValue={search}
+              onSearch={(value) => setSearch(value)}
+              onChange={() => setSearch("")}
               options={(persons ?? []).map((person) => {
                 return {
                   value: person.globalId,

@@ -31,8 +31,10 @@ export default resolver.pipe(
       ],
     })
 
-    return await Promise.all(
-      dbLists.map(async (dbList) => await getCandidateList({ globalId: dbList.globalId }, ctx))
-    )
+    return (
+      await Promise.all(
+        dbLists.map(async (dbList) => await getCandidateList({ globalId: dbList.globalId }, ctx))
+      )
+    ).sort((a, b) => (a.rank || dbLists.length) - (b.rank || dbLists.length))
   }
 )
